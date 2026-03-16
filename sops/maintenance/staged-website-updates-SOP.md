@@ -199,6 +199,12 @@ Update sites in this order to build confidence from simplest to most complex:
 6. Once complete, log into the **staging** WordPress admin
 7. **Verify:** Navigate to a few key pages to confirm staging matches production
 
+> **Note:** Pushing live to staging changes the staging server's SSH host key. If you try to SSH into staging after a push and see a "REMOTE HOST IDENTIFICATION HAS CHANGED" error, clear the old key first (quotes required in zsh):
+> ```bash
+> ssh-keygen -R '[146.148.59.197]:17181'
+> ```
+> Then reconnect and accept the new key when prompted.
+
 **Outcome:** Staging environment is an exact copy of production.
 
 ---
@@ -248,6 +254,7 @@ SSH into the staging environment and use WP-CLI commands. This is faster and giv
 **Connect to staging:**
 ```bash
 ssh [username]@[host] -p [port]
+cd ~/public
 ```
 
 **Check available updates:**
