@@ -1,14 +1,14 @@
 # SOP: Blog Post Publication with Core Web Vitals & SEO Verification
 
-**Version:** 0.2
+**Version:** 0.3
 **Date:** 2026-05-06
-**Status:** Draft
-**Last updated:** 2026-05-06
-**Last reviewed by:** Pending review (Content Creator + Technical Lead)
+**Status:** Active
+**Last updated:** 2026-06-04
+**Last reviewed by:** Juan Sanchez (QA), Technical Lead
 **Applies to:** Content Creator (anyone authoring blog posts), Maintenance Technician, Technical Lead
 **Purpose:** Publish blog posts on ppemedical.com without regressing Core Web Vitals (LCP, CLS, INP) and with Yoast SEO meta correctly set, verified with lab tests and field data inside the 28-day CrUX window.
 
-**SEO stack (verified 2026-05-06):** Yoast SEO Premium 27.4. IndexNow enabled (publish notifies Bing/Yandex instantly; do not click Publish until QA-ready). XML sitemap enabled. Schema defaults: Article / WebPage. Default social image not set, so each post must supply its own OG image.
+**SEO stack (verified 2026-05-06):** Yoast SEO Premium. IndexNow enabled (publish notifies Bing/Yandex instantly; do not click Publish until QA-ready). XML sitemap enabled. Schema defaults: Article / WebPage. Default social image not set, so each post must supply its own OG image.
 
 **Related ticket:** OST #937446
 **Past incidents:** #565057 (Blog CWV failures), #420047 (Desktop CLS), #459901 (GSC fail / PSI pass), #154223 (GSC CLS), #943410 (Mobile LCP)
@@ -32,9 +32,7 @@ PPE Medical blog posts have repeatedly regressed Core Web Vitals after publicati
 
 ## Feedback & Support
 
-**This is a first draft (v0.2) and has not yet been validated end-to-end on a live post.** Expect to find steps that are unclear, tools that have moved, or thresholds that need tuning once real traffic data accumulates.
-
-If anything in this SOP is wrong, missing, ambiguous, or breaks while you are following it, **email support@octahexa.com** with:
+If anything in this SOP is wrong, missing, ambiguous, or breaks while you are following it, **email support@gorilladevops.com** with:
 
 - The step number you were on
 - A screenshot of what you saw
@@ -301,7 +299,7 @@ Escalate to the Technical Lead with the post URL and screenshots if:
 - GSC URL Inspection shows the post is blocked, noindexed, or stuck in "Discovered - currently not indexed" past Day 14
 - Google Rich Results Test (https://search.google.com/test/rich-results) or https://validator.schema.org/ reports errors on the live URL
 
-If you are not sure whether something qualifies as an escalation, **email support@octahexa.com first**. It is better to send a low-stakes question than to publish a regression and fix it later.
+If you are not sure whether something qualifies as an escalation, **email support@gorilladevops.com first**. It is better to send a low-stakes question than to publish a regression and fix it later.
 
 ---
 
@@ -324,14 +322,14 @@ If you are not sure whether something qualifies as an escalation, **email suppor
 2. Should Step 7 (throttled DevTools) be optional for text-only posts?
 3. Does Day 1/3/7 monitoring fit the Content Creator's workload, or should the Maintenance Technician own it from Day 1?
 4. Should the Publication Checklist live as a separate file in `checklists/`?
-5. Does this SOP also cover ppetoolkit.com blog posts (LearnDash login wall changes context)?
+5. Resolved: ppemedical.com only. ppetoolkit.com does not have the Gorilla CWV Monitor plugin and is the product-access site, not a blog.
 6. Yoast `disable-author = true` removes author from schema. For medical content E-E-A-T, should we re-enable author archives and add an author bio block? (Site-wide SEO question, not per-post.)
-7. Should the Maintenance Technician also patch Yoast SEO Premium 27.4 → 27.5 in the next monthly cycle?
+7. Should the Maintenance Technician keep Yoast SEO Premium patched in the monthly cycle?
 
 ---
 
 **Document Owner:** Technical Lead
-**Next review:** After the first end-to-end run-through by a Content Creator, or 2026-06-01 (whichever first)
+**Next review:** After the first end-to-end run-through by a Content Creator, or 2026-07-01 (whichever first)
 
 ---
 
