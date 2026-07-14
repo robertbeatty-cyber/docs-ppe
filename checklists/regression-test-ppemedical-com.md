@@ -29,6 +29,8 @@
 - [ ] Individual product pages display correctly (images, pricing, descriptions, add-to-cart button)
 - [ ] Variable products show variation options correctly
 - [ ] "Add to Cart" button works
+- [ ] **Express checkout buttons render on product pages** (Stripe: Apple Pay / Google Pay / Link, plus PayPal). Test in an incognito window; the console check `tests/console/ppemedical-console-checks.js` flags whether they rendered.
+- [ ] **Each express checkout button, when clicked, opens the correct checkout flow** (Stripe / PayPal). Wallet buttons only appear on a device with that wallet, so confirm on a real device.
 - [ ] Cart page displays correct items, quantities, and pricing
 - [ ] Cart updates work (change quantity, remove item)
 - [ ] Proceed to checkout from cart works

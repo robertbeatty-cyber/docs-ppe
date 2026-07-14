@@ -1,9 +1,9 @@
 # SOP: Staged Website Updates for PPE Medical
 
-**Version:** 1.0
+**Version:** 1.2
 **Date:** 2026-02-11
 **Status:** Active
-**Last updated:** 2026-02-11
+**Last updated:** 2026-07-14 (added the per-site browser console regression checks in tests/console/ to Steps 4 & 8 and the Out-of-Cycle section; v1.1 added the non-admin testing rule after the 2026-07-07 ppetoolkit.com LearnDash/Elementor blank-content incident)
 **Last reviewed by:** Technical Lead
 **Applies to:** Maintenance Technician, Technical Lead
 **Purpose:** Provide a controlled, repeatable process for applying WordPress updates across PPE Medical's three websites using staging environments to prevent production issues
@@ -17,6 +17,8 @@
 ✅ You have added your SSH public key to MyKinsta (see [SSH Access Setup](#ssh-access-setup-one-time) below)
 ✅ You have read this SOP completely before starting your first update cycle
 ✅ You have access to the regression test checklists in this repository
+✅ You have the per-site browser console checks in [tests/console/](../../tests/console/) and know how to run them (see [Browser Console Regression Checks](../../guides/browser-console-regression-checks.md))
+✅ You have the dedicated test-account logins from the team password manager (see [Test Accounts](../../reference/test-accounts.md)) -- do not borrow real users' logins
 ✅ You have BackstopJS installed locally (see [Visual Regression Testing SOP](visual-regression-testing-SOP.md))
 ✅ You have access to Clockify for time tracking
 ✅ WordPress automatic updates are disabled on all three production sites (see [Disable WordPress Auto-Updates](#disable-wordpress-auto-updates-one-time-setup) below)
@@ -308,13 +310,20 @@ wp cache flush
 
 ### Step 4 - Regression Test on Staging
 
+> **Run render/display checks as a non-admin enrolled student, not as an admin (added 2026-07-07).** Admin sessions bypass the page cache and regenerate page assets (e.g. Elementor CSS) on the fly, so they mask cache/asset failures that break the site for students. Keep an admin session open in a second browser for comparison only. Start with **Section 0 (Cache & Asset Integrity)** of the checklist. This is the failure mode behind the 2026-07-07 ppetoolkit.com outage.
+
 1. Open the appropriate regression test checklist for the site:
    - [ppemedical.com checklist](../../checklists/regression-test-ppemedical-com.md)
    - [ppetoolkit.com checklist](../../checklists/regression-test-ppetoolkit-com.md)
    - [ppemedevents.com checklist](../../checklists/regression-test-ppemedevents-com.md)
-2. Execute every test item against the **staging** site
-3. Document pass/fail results for each item
-4. If **critical issues** are found (site errors, broken checkout, broken quizzes, broken event registration):
+2. **Fast first pass -- run the site's browser console check** while logged in **in the correct role** (for ppetoolkit.com, the dedicated enrolled non-admin student). Paste the site's file into the Chrome DevTools console on the relevant pages and confirm `0 FAIL`:
+   - ppemedical.com: [tests/console/ppemedical-console-checks.js](../../tests/console/ppemedical-console-checks.js) (shop, product, cart, checkout, account)
+   - ppetoolkit.com: [tests/console/ppetoolkit-console-checks.js](../../tests/console/ppetoolkit-console-checks.js) (course, lesson, topic, quiz)
+   - ppemedevents.com: [tests/console/ppemedevents-console-checks.js](../../tests/console/ppemedevents-console-checks.js) (events list, single event)
+   - See [Browser Console Regression Checks](../../guides/browser-console-regression-checks.md) for the page lists and how to read results. A `FAIL` here means stop and investigate before working the rest of the checklist.
+3. Execute every test item against the **staging** site
+4. Document pass/fail results for each item
+5. If **critical issues** are found (site errors, broken checkout, broken quizzes, broken event registration):
    - **STOP. Do not proceed to production.**
    - Document the issue with screenshots
    - Notify the Technical Lead with the details
@@ -369,7 +378,9 @@ wp cache flush
 
 ### Step 8 - Regression Test on Production
 
-1. Execute the same regression test checklist against the **production** site
+> **Verify as a non-admin enrolled student (added 2026-07-07).** After clearing caches, confirm as a student that courses/lessons/**Elementor-built topics** render their body content, and that DevTools > Network (CSS filter) shows **no stylesheet 404s**. An admin-only check will pass while students see blank pages -- see Section 0 of the checklist.
+
+1. Run the site's [browser console check](../../tests/console/) first (correct role; ppetoolkit.com as the enrolled non-admin student), then execute the same regression test checklist against the **production** site
 2. Pay special attention to:
    - **ppemedical.com:** Checkout flow and payment processing
    - **ppetoolkit.com:** QBank quiz functionality and LearnDash course access
@@ -397,6 +408,23 @@ wp cache flush
    - Include time for all three sites
 
 **Outcome:** Update cycle is documented and time is logged.
+
+---
+
+## Out-of-Cycle Updates -- Security, Emergency & Vendor Auto-Updates (added 2026-07-07)
+
+The monthly staged cycle above is not the only way updates reach these sites. Security fixes, emergency single-plugin updates, and vendor-pushed updates (e.g. OttoKit / SureTriggers) are sometimes applied **directly to production, outside this SOP** -- bypassing staging, BackstopJS, and Steps 1-9. This is exactly how the **2026-07-07 ppetoolkit.com outage** happened: a security-round update left Elementor's cached page HTML pointing at a stylesheet version the cache no longer had, and course topics rendered **blank for students only** -- admins saw them fine. Full write-up: `ansible-v2/tmp/ppetoolkit-2026-07-07-learndash-outage-internal.md`.
+
+**Rule: any update applied directly to production -- however small or urgent -- is not "done" until a post-update smoke test is run AS A NON-ADMIN:**
+
+1. Clear **both** caches -- WP Rocket (if active) **and** the Kinsta full-page cache.
+2. In a separate/incognito browser, log in as an **enrolled non-admin student** (an admin session bypasses cache and masks this failure).
+3. Open a course, a lesson, and an **Elementor-built topic**; confirm the body content and layout render.
+4. Run the site's [browser console check](../../tests/console/) on those pages -- it flags blank content, CSS 404s, and (for ppetoolkit.com) whether you are wrongly testing as an admin, in seconds.
+5. DevTools > Network > filter CSS > hard-reload: confirm **no stylesheet 404s** (a 404 on `post-<ID>.css` / `custom-frontend.min.css` = blank content for students).
+6. If blank for students but fine for admin: **Elementor > Tools > Regenerate CSS & Data**, clear caches, retest. See **Section 0 (Cache & Asset Integrity)** in the site's regression checklist.
+
+If an emergency update can wait, prefer the staged path (Steps 1-9). If it cannot, the non-admin smoke test above is the minimum bar before the change is considered complete.
 
 ---
 
@@ -435,6 +463,12 @@ Escalate to the Technical Lead **immediately** if any of the following occur:
 ❌ **Mistake:** Not clearing caches after updates
 ✅ **Correct approach:** Always clear MyKinsta cache after applying updates on both staging and production
 
+❌ **Mistake:** Testing render/display only while logged in as an admin
+✅ **Correct approach:** Run render checks as a non-admin enrolled student -- admins bypass caching and regenerate assets on the fly, so they will not see student-facing breakage (root of the 2026-07-07 ppetoolkit.com outage)
+
+❌ **Mistake:** Treating ad-hoc security/emergency updates as not needing regression testing
+✅ **Correct approach:** Any update applied directly to production requires at minimum the non-admin cache & asset smoke test (see "Out-of-Cycle Updates" above)
+
 ---
 
 ## Verification Checklist
@@ -459,6 +493,9 @@ Before marking an update cycle as complete, verify:
 - [Regression Test Checklist: ppemedical.com](../../checklists/regression-test-ppemedical-com.md)
 - [Regression Test Checklist: ppetoolkit.com](../../checklists/regression-test-ppetoolkit-com.md)
 - [Regression Test Checklist: ppemedevents.com](../../checklists/regression-test-ppemedevents-com.md)
+- [Tests (automated regression)](../../tests/README.md)
+- [Browser Console Regression Checks](../../guides/browser-console-regression-checks.md)
+- [Test Accounts](../../reference/test-accounts.md)
 - [Visual Regression Testing Guide](../../guides/visual-regression-testing-guide.md)
 
 ---

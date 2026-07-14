@@ -1,15 +1,37 @@
 # Regression Test Checklist: ppetoolkit.com
 
-**Last updated:** 2026-02-11
+**Last updated:** 2026-07-14 (LearnDash held at 5.1.4 -- 5.1.6 blank-content regression, #218633)
 **Site:** https://ppetoolkit.com
 **Staging:** https://staging.ppetoolkit.com
 **Risk level:** Critical
 **Total plugins:** 42 (39 active, 3 inactive)
-**Key risk areas:** LearnDash LMS + custom QBank code
+**Key risk areas:** LearnDash LMS + custom QBank code; Elementor-rendered course content (see incident 2026-07-07)
 
 ---
 
 > **CRITICAL WARNING:** This site uses custom QBank code ("LD - Quiz Customization Question Bank" v2.1.0 by WisdmLabs) that deeply integrates with LearnDash. LearnDash major version updates can break quiz functionality. Always update LearnDash ALONE first, test QBank thoroughly, then proceed with other plugins. If QBank breaks, STOP and escalate to the Technical Lead immediately.
+
+> **TEST AS A NON-ADMIN STUDENT -- NOT AS AN ADMIN (added 2026-07-07).** Every "renders correctly" / "displays correctly" check below **must** be verified while logged in as an **enrolled non-admin student**, in a separate browser or incognito window. Admin accounts bypass the page cache and trigger on-the-fly asset regeneration, so a page can look perfect to an admin while every student sees blank/broken content. This exact split caused the 2026-07-07 outage (ticket #218633): a **LearnDash 5.1.6 regression** withheld Elementor-built topic/lesson content from non-admin students while admins bypassed it and saw everything. Elementor's element cache had *masked* it for ~2 weeks until a cache clear exposed it. Testing solely as admin will miss this entire class of failure. Full write-up: `ansible-v2/tmp/ppetoolkit-2026-07-07-learndash-outage-internal.md`.
+
+> **AD-HOC & SECURITY UPDATES NEED THIS CHECKLIST TOO (added 2026-07-07).** The monthly staged-update cycle is not the only risk window. Any out-of-cycle change -- automated security updates, a single-plugin fix (e.g. OttoKit), or a vendor auto-update -- can break rendering. After **any** update to this site, run at minimum Section 0 (Cache & Asset Integrity) as a non-admin, not just the monthly batch.
+
+> **🔒 LEARNDASH IS HELD AT 5.1.4 -- DO NOT UPDATE (added 2026-07-08, ticket #218633).** LearnDash **5.1.6 has a regression** that blanks Elementor-built topic/lesson content for non-admin students (admins bypass and see it fine). 5.1.5/5.1.6 contain **no security fixes**. Prod was reverted 5.1.6 → **5.1.4** and pinned via mu-plugin `wp-content/mu-plugins/gd-plugin-update-lock.php` + `auto-updates disable sfwd-lms` (same on staging). **Do NOT update LearnDash** until a fixed version (5.1.7+) is validated on staging **as an enrolled non-admin student**. Known-good **5.1.4 zip** archived at Kinsta `private/plugin-holds/`, `ansible-v2/tmp/sfwd-lms-5.1.4.zip`, and `/tmp/plugins/` -- SHA256 `96c3ac2e9e21d1c479a30f5bbe967a0575258f5b5dc7be5949b738af0a05c537`. Rollback of the 5.1.6 build: prod `~/sfwd-lms-5.1.6.bak.20260708-072252.tgz`. **After ANY future LearnDash update, test topic/lesson rendering as a non-admin student** (run [tests/console/ppetoolkit-console-checks.js](../tests/console/ppetoolkit-console-checks.js) as the dedicated enrolled student).
+
+---
+
+## 0. Cache & Asset Integrity -- POST-UPDATE, VERIFY AS A NON-ADMIN (added 2026-07-07)
+
+> Run this **first** after any update round. It is the cheapest catch for the 2026-07-07 failure mode (content intact, CSS/asset stale → blank for students, fine for admins).
+>
+> **Fast path:** while logged in as the enrolled student, paste the all-in-one snippet from [Browser Console Regression Checks](../guides/browser-console-regression-checks.md) into the Chrome console on a course, lesson, topic, and quiz page. It checks non-admin render, CSS 404s, session/role, and quiz presence in seconds, then step through the boxes below.
+
+- [ ] After updates, clear **both** caches: WP Rocket (if active) **and** the Kinsta full-page cache (MyKinsta > Caching, or "Clear Caches" in the admin bar)
+- [ ] In a separate/incognito browser, log in as an **enrolled non-admin student** (keep an admin session open in another browser to compare)
+- [ ] Open a **course**, a **lesson**, AND a **topic** -- confirm the **body content and layout** render for the student (not just the sidebar/title bar)
+- [ ] Specifically open an **Elementor-built topic** (e.g. `/topic/cardiac-disorders/`, `/topic/cervical-spine-injuries/`) -- these depend on generated Elementor CSS files
+- [ ] Open DevTools > **Network** > filter **CSS** > hard-reload. Confirm **no stylesheet returns 404**. A 404 on an Elementor `post-<ID>.css` or `custom-frontend.min.css` means blank content for students.
+- [ ] If a topic renders blank for the student but fine for the admin: **Elementor > Tools > Regenerate CSS & Data**, then clear both caches, retest as the student.
+- [ ] Preventive: confirm **Elementor > Settings > Advanced > CSS Print Method**. `Internal Embedding` (inline CSS) is immune to this class of cache/asset-version mismatch; `External File` is faster but reintroduces the 07-07 risk on every cache purge.
 
 ---
 
@@ -110,11 +132,14 @@
 
 ## 7. Elementor & Elementor Pro
 
-- [ ] Pages built with Elementor render correctly on the frontend
+> Course content on this site is Elementor-built. Verify these **as a non-admin student** (see Section 0) -- Elementor asset issues are admin-invisible.
+
+- [ ] Pages built with Elementor render correctly on the frontend **for a non-admin student**
 - [ ] No broken layouts or missing sections
 - [ ] Elementor editor loads in admin (edit any page with Elementor)
 - [ ] Dynamic content and widgets display correctly
-- [ ] LearnDash-specific Elementor widgets render correctly
+- [ ] LearnDash-specific Elementor widgets (course/lesson/topic content) render correctly **for a non-admin student**
+- [ ] Elementor CSS files are generating: no 404 on `post-<ID>.css` / `custom-frontend.min.css` in the Network tab (see Section 0)
 
 ---
 
@@ -183,6 +208,8 @@
 
 ## Plugin Version Table
 
+> **Note (2026-07-07): this table predates the mid-2026 update rounds and is out of date.** Confirmed live since: Elementor **4.1.4**, Elementor Pro **4.1.2**, OttoKit **1.1.32**, LearnDash on the 5.x line, LearnDash - Elementor 1.0.11. Re-inventory before the next cycle -- run `wp plugin list` on the site (SSH in `ansible-v2/docs/reference/client-access.md`) and refresh every row.
+
 | # | Plugin | Current Version | Update Available | Notes |
 |---|--------|----------------|-----------------|-------|
 | 1 | Code Snippets | 3.9.4 | 3.9.5 | |
@@ -239,4 +266,4 @@
 
 ---
 
-*Last updated: 2026-02-11*
+*Last updated: 2026-07-07 (added Section 0 Cache & Asset Integrity + non-admin testing rule + ad-hoc-update rule after the LearnDash blank-content incident 2026-07-07)*

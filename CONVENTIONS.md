@@ -1,6 +1,6 @@
 # Documentation Conventions & Guidelines
 
-**Last updated:** 2026-02-11
+**Last updated:** 2026-07-14
 
 This document defines the standards and conventions for all documentation in the PPE Medical documentation repository.
 
@@ -62,9 +62,22 @@ docs-ppe/
 │   └── maintenance/       (website maintenance SOPs)
 ├── checklists/            (per-site regression test checklists)
 │   └── README.md
-└── guides/                (instructional reference guides)
-    └── README.md
+├── guides/                (instructional reference guides)
+│   └── README.md
+├── reference/             (reference data: test accounts, access pointers)
+└── tests/                 (automated regression tests)
+    ├── console/           (per-site paste-in-browser console checks)
+    └── e2e/               (Playwright end-to-end suite -- Phase 2)
 ```
+
+### `/tests/` - Automated Regression Tests
+**Purpose:** Runnable regression tests executed after WordPress and plugin updates, complementing the manual checklists.
+
+**Use for:**
+- Per-site browser console checks (`tests/console/`)
+- End-to-end Playwright tests (`tests/e2e/`)
+
+Test code is read-only against the sites (it inspects and reports; it does not submit transactions). Credentials never live in `tests/`; see `reference/test-accounts.md`.
 
 ### `/sops/maintenance/` - Standard Operating Procedures
 **Purpose:** Step-by-step procedural documentation for website maintenance
