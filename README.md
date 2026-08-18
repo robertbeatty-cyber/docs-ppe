@@ -51,6 +51,12 @@ Operational documentation for PPE Medical's three WordPress websites hosted on K
 
 See [scripts/README.md](scripts/README.md) for usage instructions.
 
+### Reference
+
+| Document | Description |
+|----------|-------------|
+| [Test Accounts](reference/test-accounts.md) | Non-admin logins for student-facing render testing (private — see security note) |
+
 ---
 
 ## Key Information
