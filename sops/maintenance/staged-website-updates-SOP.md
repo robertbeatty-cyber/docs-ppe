@@ -1,9 +1,9 @@
 # SOP: Staged Website Updates for PPE Medical
 
-**Version:** 1.2
+**Version:** 1.3
 **Date:** 2026-02-11
 **Status:** Active
-**Last updated:** 2026-07-14 (added the per-site browser console regression checks in tests/console/ to Steps 4 & 8 and the Out-of-Cycle section; v1.1 added the non-admin testing rule after the 2026-07-07 ppetoolkit.com LearnDash/Elementor blank-content incident)
+**Last updated:** 2026-09-24 (v1.3 added "Pinning a Plugin Version (Gorilla Essentials)"; v1.2, 2026-07-14, added the per-site browser console regression checks in tests/console/ to Steps 4 & 8 and the Out-of-Cycle section; v1.1 added the non-admin testing rule after the 2026-07-07 ppetoolkit.com LearnDash/Elementor blank-content incident)
 **Last reviewed by:** Technical Lead
 **Applies to:** Maintenance Technician, Technical Lead
 **Purpose:** Provide a controlled, repeatable process for applying WordPress updates across PPE Medical's three websites using staging environments to prevent production issues
@@ -89,6 +89,59 @@ After adding the constants, verify by going to **Dashboard > Updates** in WordPr
 - [ ] ppemedical.com -- `wp-config.php` updated, plugin auto-updates disabled
 - [ ] ppetoolkit.com -- `wp-config.php` updated, plugin auto-updates disabled
 - [ ] ppemedevents.com -- `wp-config.php` updated, plugin auto-updates disabled
+
+---
+
+## Pinning a Plugin Version (Gorilla Essentials)
+
+When a plugin release is known to break a site, we **pin** it at the last known-good version instead of relying on everyone remembering not to update it. Pins are managed by the **Gorilla Essentials** plugin (Gorilla DevOps, source repo `gorilla-essentials`), which is installed and active on all three production sites.
+
+### What a pin does
+
+A pin is enforced in four places, so it holds however the update is attempted:
+
+| Layer | Effect |
+|-------|--------|
+| Update list | Updates **above** the pinned version are hidden from Dashboard > Updates, the Plugins screen and `wp plugin list --update=available` |
+| Auto-updates | Refused for any version above the pin |
+| Manual / WP-CLI install | Blocked with the error `Update blocked -- <plugin> is version-locked` (the error text contains an em dash; it is quoted here with `--`) |
+| Admin notice | A notice on the Plugins screen and an inline "locked" row under the plugin |
+
+Updates **at or below** the pinned version are still allowed. A pin can also freeze WordPress core (**WordPress Core** section on the same tab).
+
+### Currently pinned (verified 2026-09-24)
+
+| Site | Plugin | Pinned at | Reason |
+|------|--------|-----------|--------|
+| ppetoolkit.com | LearnDash LMS (`sfwd-lms`) | 5.1.4 | 5.1.6 blanks course content for students, #218633 |
+| ppemedical.com | none | - | - |
+| ppemedevents.com | none | - | - |
+
+The ppetoolkit.com pin replaced the earlier `gd-plugin-update-lock.php` mu-plugin, which is no longer on the server. Pins are stored in the database, so a production-to-staging push copies them to staging.
+
+### Add, change or remove a pin
+
+1. Go to **Tools > Gorilla Essentials > Plugin Locks**
+2. **Add a Pin:** choose the plugin, enter the version to hold at, and write a note that gives the **reason and the ticket number**. The note is shown to anyone who tries to update the plugin.
+3. **Lift a pin:** switch it off, or tick **Remove**, then save. Do this on staging first and test the new version there. Lift it on production only once staging has passed.
+
+Read-only check over SSH:
+
+```bash
+wp option get gorilla_essentials_settings --format=json | grep -o '"locks".*'
+```
+
+### When to pin
+
+- A release has broken staging or production, and the vendor has not yet shipped a fix
+- The Technical Lead has asked for a plugin to be held (for example, while waiting for a vendor fix)
+
+Record each pin in the site's regression checklist (see the LearnDash hold note in the ppetoolkit.com checklist) so the next person knows why it is held and what "fixed" looks like.
+
+### During an update cycle
+
+- A pinned plugin **will not appear** in the list of available updates. This is expected, not a fault.
+- Before lifting a pin, confirm the new version fixes the original problem **on staging**, using the test that caught it (for LearnDash: render as an enrolled non-admin student).
 
 ---
 
@@ -483,6 +536,7 @@ Before marking an update cycle as complete, verify:
 - [ ] Payment flow verified on ppemedical.com (if WooCommerce was updated)
 - [ ] All caches cleared on all environments
 - [ ] Plugin version tables updated in checklists
+- [ ] Any pinned plugins are still pinned (Tools > Gorilla Essentials > Plugin Locks), and each pin's note still gives its reason
 - [ ] Time logged in Clockify
 - [ ] Any issues documented and escalated as needed
 

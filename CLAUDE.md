@@ -23,14 +23,22 @@ This repository contains operational documentation for PPE Medical's three busin
 - LearnDash 5.0 changed REST API field names (`inProgress` to `in_progress`)
 - **The client specifically requested** staging testing before any LearnDash updates
 - Always update LearnDash ALONE first on staging, test QBank thoroughly, then proceed with other plugins
+- LearnDash is currently **pinned at 5.1.4** (#218633) via the Gorilla Essentials plugin
+
+### Plugin Version Pinning - Gorilla Essentials
+- The **Gorilla Essentials** plugin (Gorilla DevOps, repo `gorilla-essentials`) is active on all three sites
+- It can pin any plugin, or WordPress core, at a known-good version: Tools > Gorilla Essentials > Plugin Locks
+- A pinned plugin's newer updates are hidden, auto-updates are refused, and manual/WP-CLI updates are blocked
+- See "Pinning a Plugin Version" in the staged website updates SOP
 
 ### ppemedical.com - Payment Processing
-- Runs WooCommerce with dual Authorize.Net payment gateways
+- Runs WooCommerce with Authorize.Net (Enterprise) as the card gateway, plus Stripe and PayPal Payments (as of 2026-09-24 the second Authorize.Net gateway, CIM, is installed but inactive)
 - Payment processing must be verified after every update cycle
 - WooCommerce Subscriptions handles recurring billing
 
 ### ppemedevents.com - Simplest Site
-- Only 11 plugins (vs 42 on the other two sites)
+- Only 13 plugins (vs 43-45 on the other two sites, as of 2026-09-24)
+- The whole site is **deliberately behind a site-wide password** (Password Protected plugin). Unauthenticated REST calls return 401 by design; only Promoter's IP and specific routes are allowlisted (see the ansible-v2 ppemedevents runbook)
 - Standard Events Calendar implementation
 - Good candidate for updating first in any cycle
 

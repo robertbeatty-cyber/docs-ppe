@@ -1,6 +1,7 @@
 # Regression Test Checklist: ppetoolkit.com
 
-**Last updated:** 2026-07-14 (LearnDash held at 5.1.4 -- 5.1.6 blank-content regression, #218633)
+**Last updated:** 2026-09-24 (LearnDash pin moved to Gorilla Essentials; held at 5.1.4 since 2026-07-14, #218633)
+**Last executed:** never recorded
 **Site:** https://ppetoolkit.com
 **Staging:** https://staging.ppetoolkit.com
 **Risk level:** Critical
@@ -15,7 +16,7 @@
 
 > **AD-HOC & SECURITY UPDATES NEED THIS CHECKLIST TOO (added 2026-07-07).** The monthly staged-update cycle is not the only risk window. Any out-of-cycle change -- automated security updates, a single-plugin fix (e.g. OttoKit), or a vendor auto-update -- can break rendering. After **any** update to this site, run at minimum Section 0 (Cache & Asset Integrity) as a non-admin, not just the monthly batch.
 
-> **🔒 LEARNDASH IS HELD AT 5.1.4 -- DO NOT UPDATE (added 2026-07-08, ticket #218633).** LearnDash **5.1.6 has a regression** that blanks Elementor-built topic/lesson content for non-admin students (admins bypass and see it fine). 5.1.5/5.1.6 contain **no security fixes**. Prod was reverted 5.1.6 → **5.1.4** and pinned via mu-plugin `wp-content/mu-plugins/gd-plugin-update-lock.php` + `auto-updates disable sfwd-lms` (same on staging). **Do NOT update LearnDash** until a fixed version (5.1.7+) is validated on staging **as an enrolled non-admin student**. Known-good **5.1.4 zip** archived at Kinsta `private/plugin-holds/`, `ansible-v2/tmp/sfwd-lms-5.1.4.zip`, and `/tmp/plugins/` -- SHA256 `96c3ac2e9e21d1c479a30f5bbe967a0575258f5b5dc7be5949b738af0a05c537`. Rollback of the 5.1.6 build: prod `~/sfwd-lms-5.1.6.bak.20260708-072252.tgz`. **After ANY future LearnDash update, test topic/lesson rendering as a non-admin student** (run [tests/console/ppetoolkit-console-checks.js](../tests/console/ppetoolkit-console-checks.js) as the dedicated enrolled student).
+> **🔒 LEARNDASH IS HELD AT 5.1.4 -- DO NOT UPDATE (added 2026-07-08, ticket #218633).** LearnDash **5.1.6 has a regression** that blanks Elementor-built topic/lesson content for non-admin students (admins bypass and see it fine). 5.1.5/5.1.6 contain **no security fixes**. Prod was reverted 5.1.6 → **5.1.4** and pinned at 5.1.4 in **Tools > Gorilla Essentials > Plugin Locks** (verified 2026-09-24; this replaced the earlier `gd-plugin-update-lock.php` mu-plugin, which has been removed). See [Pinning a Plugin Version](../sops/maintenance/staged-website-updates-SOP.md#pinning-a-plugin-version-gorilla-essentials). **Do NOT update LearnDash** until a fixed version (5.1.7+) is validated on staging **as an enrolled non-admin student**. Known-good **5.1.4 zip** archived at Kinsta `private/plugin-holds/`, `ansible-v2/tmp/sfwd-lms-5.1.4.zip`, and `/tmp/plugins/` -- SHA256 `96c3ac2e9e21d1c479a30f5bbe967a0575258f5b5dc7be5949b738af0a05c537`. Rollback of the 5.1.6 build: prod `~/sfwd-lms-5.1.6.bak.20260708-072252.tgz`. **After ANY future LearnDash update, test topic/lesson rendering as a non-admin student** (run [tests/console/ppetoolkit-console-checks.js](../tests/console/ppetoolkit-console-checks.js) as the dedicated enrolled student).
 
 ---
 

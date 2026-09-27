@@ -1,6 +1,6 @@
 # Regression Test Automation Plan
 
-**Last updated:** 2026-07-14
+**Last updated:** 2026-09-24
 **Purpose:** Define which per-site regression checks to automate, how, and in what order -- so automation front-loads the mechanical checks while the manual checklists stay authoritative. Decisions are agreed (see below); the Tier 0 console checks are built, Tier 1 is Phase 2.
 
 ---
@@ -39,7 +39,7 @@ Read-only JavaScript snippets pasted into the Chrome DevTools console, run by ha
 | No CSS/JS 404s on those pages (`post-<ID>.css`, `custom-frontend.min.css`) | Playwright network interception | ppetoolkit S0, S7 | 07-07 asset symptom |
 | Full quiz attempt start to submit to score, as a student | Playwright | ppetoolkit S3, S12 | QBank / LearnDash version breakage |
 | PHP error-log delta after update | WP-CLI + log grep over SSH | ppetoolkit S4, S12 | New fatals |
-| Plugin version and active-state assertions; LearnDash pinned at 5.1.4; mu-plugin update-lock present | `wp plugin list` parse | ppetoolkit S12, version table | Accidental un-pin, deactivated QBank |
+| Plugin version and active-state assertions; LearnDash pinned at 5.1.4; Gorilla Essentials lock for `sfwd-lms` enabled | `wp plugin list` parse | ppetoolkit S12, version table | Accidental un-pin, deactivated QBank |
 | Homepage, nav, and key pages load with no console errors | Playwright | ppetoolkit S1 | Gross breakage |
 
 ### Tier 2 -- automate selectively (lower value)
@@ -96,4 +96,4 @@ tests/
 
 ---
 
-*Last updated: 2026-07-14*
+*Last updated: 2026-09-24*

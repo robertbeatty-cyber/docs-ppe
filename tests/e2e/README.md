@@ -1,6 +1,6 @@
 # End-to-End Tests (Playwright) -- Phase 2
 
-**Last updated:** 2026-07-14
+**Last updated:** 2026-09-24
 **Status:** Placeholder. Not yet built.
 
 This directory will hold the **Tier 1** Playwright suite described in the [Regression Test Automation Plan](../../guides/regression-automation-plan.md): headless, unattended browser tests that run against staging (and read-only smoke against production) after every update round.
@@ -19,6 +19,6 @@ Unlike the Tier 0 console checks in [`../console/`](../console/) -- which a tech
 1. `ppetoolkit` non-admin render sweep -- log in as the dedicated student, assert topic/lesson bodies render (not just HTTP 200), assert no Elementor CSS 404s.
 2. `ppetoolkit` QBank quiz smoke -- start to submit to score, on staging.
 3. `ppemedical` express checkout click-through -- click each product-page express button (Stripe / PayPal) and assert it opens the correct checkout flow. The console check only confirms the buttons rendered; clicking through the cross-origin wallet iframe needs Playwright (and, for wallet buttons, a test wallet on the runner).
-4. WP-CLI health/pin check -- LearnDash held at 5.1.4, mu-plugin update-lock present, no new PHP fatals.
+4. WP-CLI health/pin check -- LearnDash held at 5.1.4, Gorilla Essentials lock for `sfwd-lms` enabled, no new PHP fatals.
 
 The console checks in `../console/` are the reference for the selectors and assertions these tests will reuse.

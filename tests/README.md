@@ -1,6 +1,6 @@
 # Tests
 
-**Last updated:** 2026-07-14
+**Last updated:** 2026-09-24
 **Purpose:** Automated regression tests for the three PPE Medical websites, run after WordPress and plugin updates. This complements the manual [checklists](../checklists/) and the [visual regression testing guide](../guides/visual-regression-testing-guide.md); it does not replace them.
 
 See the [Regression Test Automation Plan](../guides/regression-automation-plan.md) for scope, tiering, and design decisions.
@@ -16,6 +16,8 @@ tests/
 │   ├── ppetoolkit-console-checks.js       LearnDash / QBank / Elementor render + CSS-404 + quiz
 │   ├── ppemedical-console-checks.js       WooCommerce shop / product / cart / checkout gateways
 │   └── ppemedevents-console-checks.js     The Events Calendar listing + single-event render
+├── http/                                 (Tier 0: zero-install, run with bash + curl, no login)
+│   └── ppemedevents-rest-checks.sh        Password wall up, OttoKit allowlist reachable, TLS
 └── e2e/                                  (Tier 1: Playwright end-to-end -- see e2e/README.md, Phase 2)
     └── README.md
 ```
@@ -27,6 +29,7 @@ Each site has its **own** console test because each site has a different surface
 | ppetoolkit.com | `console/ppetoolkit-console-checks.js` | Non-admin student render (the #218633 blank-content catcher), Elementor CSS 404s, QBank quiz |
 | ppemedical.com | `console/ppemedical-console-checks.js` | Checkout renders payment gateways (Authorize.Net), product/cart/account render |
 | ppemedevents.com | `console/ppemedevents-console-checks.js` | Events Calendar list/month view and single-event render |
+| ppemedevents.com | `http/ppemedevents-rest-checks.sh` | Password wall still returns 401, OttoKit `sure-triggers/v1` reachable, TLS 1.2/1.3. Run from a terminal against production. Promoter itself is checked in the access log (checklist Section 2b) |
 
 ## Running the console tests
 

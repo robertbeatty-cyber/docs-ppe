@@ -1,6 +1,7 @@
 # Regression Test Checklist: ppemedical.com
 
-**Last updated:** 2026-02-11
+**Last updated:** 2026-09-24
+**Last executed:** never recorded
 **Site:** https://ppemedical.com
 **Staging:** https://staging.ppemedical.com
 **Risk level:** High

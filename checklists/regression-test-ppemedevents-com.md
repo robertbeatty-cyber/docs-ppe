@@ -1,11 +1,27 @@
 # Regression Test Checklist: ppemedevents.com
 
-**Last updated:** 2026-02-11
+**Last updated:** 2026-09-24
+**Last executed:** never recorded
 **Site:** https://ppemedevents.com
 **Staging:** https://staging.ppemedevents.com
 **Risk level:** Standard
-**Total plugins:** 11 (10 active, 1 inactive)
-**Key risk areas:** The Events Calendar + Event Tickets
+**Total plugins:** 13 (12 active, 1 inactive), verified on production 2026-09-24
+**Key risk areas:** The Events Calendar + Event Tickets + **Promoter sync through the password wall (see Section 2b)**
+
+> **The whole site is deliberately behind a site-wide password** (Password Protected plugin).
+> The client wants event dates and RSVP details hidden. An unauthenticated call to the REST
+> API **returns 401 "Only authenticated users can access the REST API". That is correct.**
+> Promoter (209.87.149.23) gets through by IP, and OttoKit's `sure-triggers/v1` namespace is
+> allowlisted by the mu-plugin `gd-pp-allowlist-ppemedevents.php`. Read the ppemedevents
+> runbook in `ansible-v2/docs/clients/ppemedevents.md` before changing anything here.
+>
+> **Why Section 2b exists.** Between June and August 2026 this site had four incidents, all
+> in the same place: Promoter could not get through to the REST API, so attendees stopped
+> syncing and event emails stopped going out. OST #620213, #878267 (cURL 35, TLS),
+> #594224 and #970742. Three of the four did not follow an update, so running this
+> section monthly catches them by luck. The automated check in
+> [`tests/http/ppemedevents-rest-checks.sh`](../tests/http/ppemedevents-rest-checks.sh)
+> covers the wall and TLS. Only the access log shows whether Promoter is getting through.
 
 ---
 
@@ -32,6 +48,29 @@
 - [ ] Calendar navigation works (next/previous month, date picker)
 - [ ] Past events are accessible (if configured)
 - [ ] Upcoming events display correctly
+
+---
+
+## 2b. Promoter Sync Through the Password Wall (highest-risk area on this site)
+
+Run this on **production** after every update, and whenever event emails are reported as not arriving.
+
+- [ ] Run `bash tests/http/ppemedevents-rest-checks.sh`. All checks pass: REST is walled (401), `sure-triggers/v1` is reachable (200), TLS negotiates
+- [ ] **Promoter is getting through.** Over SSH, the recent Promoter requests in the access log return 200 (the logs keep only about 3 days):
+  ```bash
+  grep -h 209.87.149.23 ~/logs/access.log* | awk '{print $8}' | sort | uniq -c
+  ```
+  Expect only `200`. Any `401` means Promoter is being blocked by the wall
+- [ ] Both mu-plugins are present: `gd-password-protected-allowlist.php` and `gd-pp-allowlist-ppemedevents.php` (`wp plugin list --status=must-use`)
+- [ ] `wp option get password_protected_allowed_ip_addresses` still contains `209.87.149.23`
+- [ ] OttoKit shows as connected in WP Admin
+
+**If REST returns 200, the wall is down.** Event data is then public, which the client
+treats as business-critical. Escalate immediately.
+
+**If Promoter shows an authentication or sync error banner, do not click "reset the
+authorization".** The banner is known to persist after the problem has cleared (Liquid Web
+case #52250357). Check the access log first. A reset tears down a working connection.
 
 ---
 
