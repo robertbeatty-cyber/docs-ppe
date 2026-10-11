@@ -1,9 +1,9 @@
 # SOP: Blog Post Publication with Core Web Vitals & SEO Verification
 
-**Version:** 0.3
+**Version:** 0.4
 **Date:** 2026-05-06
 **Status:** Active
-**Last updated:** 2026-06-04
+**Last updated:** 2026-10-11
 **Last reviewed by:** Juan Sanchez (QA), Technical Lead
 **Applies to:** Content Creator (anyone authoring blog posts), Maintenance Technician, Technical Lead
 **Purpose:** Publish blog posts on ppemedical.com without regressing Core Web Vitals (LCP, CLS, INP) and with Yoast SEO meta correctly set, verified with lab tests and field data inside the 28-day CrUX window.
@@ -105,6 +105,7 @@ Use one only if **all** are true:
 - Descriptive `alt` on every image; empty alt only for purely decorative images.
 - Tables: core/table block. Avoid plugin table libraries (late CSS injection causes CLS).
 - Keep the intro paragraph to 1-2 sentences so text LCP renders fast on mobile.
+- **Videos (Vimeo, YouTube):** add every video with the block editor Vimeo/YouTube block and give it the class `gd-lazy-video` (Block > Advanced > Additional CSS class(es)). The page then shows a thumbnail with a play button and loads the player only on click. Without the class the full player loads on page load. See the [Blog Post Videos SOP](blog-video-embed-SOP.md).
 
 **Outcome:** Draft uses approved blocks and has alt text everywhere.
 
@@ -225,6 +226,8 @@ CrUX is a 28-day rolling window, so field data lags lab data. SEO indexing is al
 | Skipping Step 7 because PSI passed | #459901: GSC failed, PSI passed | Always run Step 7 |
 | Publish then walk away | IndexNow already pinged search engines; field data captures regressions fast | Run Steps 6-8 within 15 minutes |
 | Skipping Day 1/3/7 monitoring | 28-day CrUX hides regressions | Follow Step 9 |
+| Video embedded without the `gd-lazy-video` class | Full Vimeo/YouTube player loads on page load, slower page | Add the class per the [Blog Post Videos SOP](blog-video-embed-SOP.md) |
+| Checking the post while logged in | Perfmatters optimisations are off for logged-in users, so you see the unoptimised page | Check in a private/incognito window |
 | Plugin table blocks | Late CSS injection causes CLS | core/table block |
 | `<img>` without width/height | Browser cannot reserve space, CLS | Verify in rendered HTML |
 | Reusing a focus keyphrase from another post | Yoast cannibalization warning; both pages compete | Pick a unique keyphrase per post |
@@ -246,6 +249,7 @@ CrUX is a 28-day rolling window, so field data lags lab data. SEO indexing is al
 - [ ] Body uses Gutenberg or GenerateBlocks (no Elementor, no Elementor sync patterns)
 - [ ] Tables use core/table
 - [ ] Intro paragraph is 1-2 sentences
+- [ ] Every Vimeo/YouTube video has the class `gd-lazy-video` ([Blog Post Videos SOP](blog-video-embed-SOP.md))
 
 **Yoast SEO meta:**
 - [ ] Focus keyphrase set, not duplicated from another post (no cannibalization warning)
@@ -267,6 +271,7 @@ CrUX is a 28-day rolling window, so field data lags lab data. SEO indexing is al
 - [ ] `?web_vitals_debug=1` console shows CLS, LCP, INP all "good"
 - [ ] View Source: OG tags (`og:title`, `og:description`, `og:image`) and Article schema JSON-LD present
 - [ ] PSI numbers and publish time recorded in post notes
+- [ ] Private window: every video shows a thumbnail with a play button and plays on click
 
 **If above-the-fold image was used:**
 - [ ] View Source: `fetchpriority="high"` on the image
@@ -305,6 +310,7 @@ If you are not sure whether something qualifies as an escalation, **email suppor
 
 ## Related Documents
 
+- [Blog Post Videos SOP](blog-video-embed-SOP.md)
 - [Staged Website Updates SOP](../maintenance/staged-website-updates-SOP.md)
 - [Visual Regression Testing SOP](../maintenance/visual-regression-testing-SOP.md)
 - [Regression Test Checklist: ppemedical.com](../../checklists/regression-test-ppemedical-com.md)

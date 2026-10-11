@@ -26,6 +26,8 @@ Operational documentation for PPE Medical's three WordPress websites hosted on K
 |----------|-------------|
 | [Staged Website Updates SOP](sops/maintenance/staged-website-updates-SOP.md) | Complete 9-step workflow for monthly update cycles |
 | [Visual Regression Testing SOP](sops/maintenance/visual-regression-testing-SOP.md) | Install, configure, and run BackstopJS |
+| [Blog Post Publication SOP](sops/content/blog-post-publication-cwv-SOP.md) | Publish blog posts on ppemedical.com without regressing Core Web Vitals |
+| [Blog Post Videos SOP](sops/content/blog-video-embed-SOP.md) | Add Vimeo/YouTube videos as click-to-play thumbnails (`gd-lazy-video`) |
 
 ### Regression Test Checklists
 
@@ -92,6 +94,9 @@ docs-ppe/
 ├── README.md
 ├── sops/
 │   ├── README.md
+│   ├── content/
+│   │   ├── blog-post-publication-cwv-SOP.md
+│   │   └── blog-video-embed-SOP.md
 │   └── maintenance/
 │       ├── staged-website-updates-SOP.md
 │       └── visual-regression-testing-SOP.md

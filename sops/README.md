@@ -16,6 +16,7 @@ Standard operating procedures for PPE Medical website maintenance.
 | SOP | Description |
 |-----|-------------|
 | [Blog Post Publication with CWV & SEO Verification](content/blog-post-publication-cwv-SOP.md) | DRAFT v0.2. Publish-then-QA procedure to keep blog posts on ppemedical.com from regressing LCP, CLS, and INP, with Yoast SEO Premium meta gate before publish. Source: OST #937446 |
+| [Adding Videos to Blog Posts](content/blog-video-embed-SOP.md) | Add Vimeo/YouTube videos with the `gd-lazy-video` class so they show a click-to-play thumbnail instead of loading the player on page load |
 
 ---
 
