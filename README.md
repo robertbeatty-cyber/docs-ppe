@@ -33,9 +33,9 @@ Operational documentation for PPE Medical's three WordPress websites hosted on K
 
 | Checklist | Plugins | Risk Level |
 |-----------|---------|------------|
-| [ppemedical.com](checklists/regression-test-ppemedical-com.md) | 42 plugins (WooCommerce + Authorize.Net) | High |
-| [ppetoolkit.com](checklists/regression-test-ppetoolkit-com.md) | 42 plugins (LearnDash + custom QBank) | **Critical** |
-| [ppemedevents.com](checklists/regression-test-ppemedevents-com.md) | 11 plugins (Events Calendar) | Standard |
+| [ppemedical.com](checklists/regression-test-ppemedical-com.md) | 46 plugins (WooCommerce + Stripe/PayPal, Authorize.Net renewals) | High |
+| [ppetoolkit.com](checklists/regression-test-ppetoolkit-com.md) | 37 plugins (LearnDash + custom QBank) | **Critical** |
+| [ppemedevents.com](checklists/regression-test-ppemedevents-com.md) | 12 plugins (Events Calendar, password wall) | Standard |
 
 ### Guides
 
@@ -58,6 +58,7 @@ See [scripts/README.md](scripts/README.md) for usage instructions.
 | Document | Description |
 |----------|-------------|
 | [Test Accounts](reference/test-accounts.md) | Non-admin logins for student-facing render testing (private — see security note) |
+| [ppetoolkit.com: Blank Content and `read`](reference/ppetoolkit-learndash-read-capability.md) | Why lessons/topics go blank for some roles on LearnDash 5.1.6+, who is affected, and the plan before unpinning |
 
 ---
 
@@ -79,7 +80,7 @@ See [scripts/README.md](scripts/README.md) for usage instructions.
 
 1. **ppetoolkit.com LearnDash updates:** Always update LearnDash ALONE first on staging, test QBank functionality thoroughly, then proceed with other plugins. LearnDash 5.0+ changed API field names (`inProgress` to `in_progress`) which can break custom quiz code.
 
-2. **ppemedical.com payment processing:** WooCommerce and Authorize.Net gateway updates require payment flow verification. Never push to production without confirming checkout works on staging.
+2. **ppemedical.com payment processing:** WooCommerce, Stripe, PayPal and Authorize.Net gateway updates require payment flow verification. Authorize.Net must stay enabled (subscription renewals) but hidden from checkout. Never push to production without confirming checkout works on staging.
 
 3. **Update order matters:** Start with ppemedevents.com (simplest, 11 plugins) to build confidence, then ppemedical.com, then ppetoolkit.com (highest risk) last.
 
@@ -123,4 +124,4 @@ See [CONVENTIONS.md](CONVENTIONS.md) for file naming, commit message format, and
 
 ---
 
-*Last updated: 2026-02-11*
+*Last updated: 2026-10-29*

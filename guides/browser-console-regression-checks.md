@@ -1,6 +1,6 @@
 # Browser Console Regression Checks
 
-**Last updated:** 2026-07-14
+**Last updated:** 2026-10-29
 **Purpose:** Zero-install, read-only checks you paste into the Chrome DevTools console to verify a page in the browser session you are actually logged into. This is the "Tier 0" layer of the [Regression Test Automation Plan](regression-automation-plan.md). The runnable snippets live in [`tests/console/`](../tests/console/), one per site; this guide is the how-to.
 
 ---
@@ -18,7 +18,7 @@ Each site has a different surface, so each has its own snippet:
 | Site | File | Checks |
 |------|------|--------|
 | ppetoolkit.com | [`tests/console/ppetoolkit-console-checks.js`](../tests/console/ppetoolkit-console-checks.js) | Non-admin student render (#218633 catcher), Elementor CSS 404s, session/role, QBank quiz |
-| ppemedical.com | [`tests/console/ppemedical-console-checks.js`](../tests/console/ppemedical-console-checks.js) | Checkout payment gateways (Authorize.Net), product/cart/account render, CSS 404s |
+| ppemedical.com | [`tests/console/ppemedical-console-checks.js`](../tests/console/ppemedical-console-checks.js) | Checkout payment gateways (Stripe shown, Authorize.Net hidden), product/cart/account render, CSS 404s |
 | ppemedevents.com | [`tests/console/ppemedevents-console-checks.js`](../tests/console/ppemedevents-console-checks.js) | Events Calendar list/month view and single-event render, CSS 404s |
 
 ## How to run
@@ -53,7 +53,7 @@ Each site has a different surface, so each has its own snippet:
 | Shop | `/shop/` | Shop products PASS |
 | Product | any single product | Add to Cart + price PASS, **Express checkout PASS** (Stripe + PayPal buttons render) |
 | Cart | `/cart/` | Cart render PASS |
-| Checkout | `/checkout/` | Payment gateways PASS (Authorize.Net present) + Place Order PASS |
+| Checkout | `/checkout/` | Payment gateways PASS (Stripe present, Authorize.Net hidden) + Place Order PASS |
 | My Account | `/my-account/` | My Account render PASS |
 
 > **Express checkout is only half-testable from the console.** The Stripe (Apple Pay / Google Pay / Link) and PayPal buttons render inside cross-origin iframes, so the console check confirms they *rendered* but cannot click them. After a PASS, manually **click each express checkout button in incognito** and confirm it opens the correct checkout flow. Wallet buttons (Apple Pay / Google Pay) only appear on a browser/device that has that wallet, so a WARN can mean "no wallet here" rather than "broken" -- verify on a real device. This click-through is a Phase 2 Playwright candidate.
@@ -67,7 +67,8 @@ Each site has a different surface, so each has its own snippet:
 
 ## Reading the result
 
-- **FAIL on Content render (ppetoolkit)** -- the page is blank for this user. If you are the enrolled student, this is the #218633 class of failure: escalate, check the LearnDash 5.1.4 pin, and clear caches.
+- **FAIL on Content render or Step count (ppetoolkit)** -- the page is blank for this user, or LearnDash shows "0/0 Steps". First check that the user's role has the `read` capability: since LearnDash 5.1.5 a role without `read` gets blank topics and lessons (#218633, see [the finding](../reference/ppetoolkit-learndash-read-capability.md)). If the role has `read`, clear both caches and escalate.
+- **FAIL on Checkout gateways (ppemedical)** -- Authorize.Net is showing at checkout. It must stay enabled for subscription renewals but hidden; check `hide_authnet_gateway` in the child theme.
 - **FAIL on Checkout payment (ppemedical)** -- no payment gateways rendered: payment is down. Do not go live; escalate.
 - **FAIL on Stylesheets** -- a CSS file 404'd. On ppetoolkit that means blank content; regenerate Elementor CSS and clear both caches (checklist Section 0).
 - **WARN on Session (ppetoolkit)** -- you are probably testing as an admin. Stop and re-test as the enrolled student, or the result means nothing. A red banner says the same thing loudly.
@@ -116,7 +117,7 @@ The console cannot retrieve errors that fired before it opened. Paste this, then
 
 ## Notes and limitations
 
-- **Selectors and thresholds are a starting point.** The content-render heuristic (empty region = under 400 chars, no widgets, no media) and the site-specific selectors were written from the #218633 evidence and standard WooCommerce / Events Calendar markup, not by inspecting every template. Validate against a known-good page on first use and adjust the selectors in the site's `.js` file if a good page is misflagged. The Tier-1 Playwright suite will reuse the same selectors.
+- **Selectors and thresholds are a starting point.** The content-render heuristic (LearnDash content block under 200 chars, no widgets, no media; plus a "0/0 Steps" progress check on ppetoolkit) and the site-specific selectors were written from the #218633 evidence and standard WooCommerce / Events Calendar markup, not by inspecting every template. Validate against a known-good page on first use and adjust the selectors in the site's `.js` file if a good page is misflagged. The Tier-1 Playwright suite will reuse the same selectors.
 - **Cross-origin assets report `responseStatus` 0** and are intentionally skipped, so a CDN font or script will not show as a false 404. The site-origin CSS files that matter report a real status.
 - **These do not replace the manual checklist or the Playwright suite.** They are the fastest first look during hands-on testing. The authoritative record stays the [checklists](../checklists/).
 

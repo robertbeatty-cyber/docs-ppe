@@ -8,9 +8,9 @@ Per-site regression test checklists for PPE Medical's three WordPress websites. 
 
 | Checklist | Plugins | Risk Level | Key Concern |
 |-----------|---------|------------|-------------|
-| [ppemedical.com](regression-test-ppemedical-com.md) | 42 | High | WooCommerce + Authorize.Net payment processing |
-| [ppetoolkit.com](regression-test-ppetoolkit-com.md) | 42 | **Critical** | LearnDash + custom QBank code |
-| [ppemedevents.com](regression-test-ppemedevents-com.md) | 11 | Standard | Events Calendar + Event Tickets |
+| [ppemedical.com](regression-test-ppemedical-com.md) | 46 | High | WooCommerce checkout (Stripe + PayPal), Authorize.Net renewals |
+| [ppetoolkit.com](regression-test-ppetoolkit-com.md) | 37 | **Critical** | LearnDash + custom QBank code, roles need `read` |
+| [ppemedevents.com](regression-test-ppemedevents-com.md) | 12 | Standard | Events Calendar + Event Tickets, password wall over REST |
 
 ---
 

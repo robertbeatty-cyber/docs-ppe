@@ -1,22 +1,22 @@
 # Regression Test Checklist: ppetoolkit.com
 
-**Last updated:** 2026-09-24 (LearnDash pin moved to Gorilla Essentials; held at 5.1.4 since 2026-07-14, #218633)
-**Last executed:** never recorded
+**Last updated:** 2026-10-29 (LearnDash updated to 5.2.2.1 and unpinned after user roles were given `read`, #218633)
+**Last executed:** 2026-10-29 (staging, then production)
 **Site:** https://ppetoolkit.com
 **Staging:** https://staging.ppetoolkit.com
 **Risk level:** Critical
-**Total plugins:** 42 (39 active, 3 inactive)
-**Key risk areas:** LearnDash LMS + custom QBank code; Elementor-rendered course content (see incident 2026-07-07)
+**Total plugins:** 44 (37 active, 7 inactive), plus 6 must-use, verified on production 2026-10-29
+**Key risk areas:** LearnDash LMS + custom QBank code; Elementor-rendered course content; user roles must keep the `read` capability (see incident 2026-07-07)
 
 ---
 
 > **CRITICAL WARNING:** This site uses custom QBank code ("LD - Quiz Customization Question Bank" v2.1.0 by WisdmLabs) that deeply integrates with LearnDash. LearnDash major version updates can break quiz functionality. Always update LearnDash ALONE first, test QBank thoroughly, then proceed with other plugins. If QBank breaks, STOP and escalate to the Technical Lead immediately.
 
-> **TEST AS A NON-ADMIN STUDENT -- NOT AS AN ADMIN (added 2026-07-07).** Every "renders correctly" / "displays correctly" check below **must** be verified while logged in as an **enrolled non-admin student**, in a separate browser or incognito window. Admin accounts bypass the page cache and trigger on-the-fly asset regeneration, so a page can look perfect to an admin while every student sees blank/broken content. This exact split caused the 2026-07-07 outage (ticket #218633): a **LearnDash 5.1.6 regression** withheld Elementor-built topic/lesson content from non-admin students while admins bypassed it and saw everything. Elementor's element cache had *masked* it for ~2 weeks until a cache clear exposed it. Testing solely as admin will miss this entire class of failure. Full write-up: `ansible-v2/tmp/ppetoolkit-2026-07-07-learndash-outage-internal.md`.
+> **TEST AS A NON-ADMIN STUDENT -- NOT AS AN ADMIN (added 2026-07-07).** Every "renders correctly" / "displays correctly" check below **must** be verified while logged in as an **enrolled non-admin student**, in a separate browser or incognito window. Admin accounts bypass the page cache and trigger on-the-fly asset regeneration, so a page can look perfect to an admin while every student sees blank/broken content. The 2026-07-07 outage (ticket #218633) was a version of this: from LearnDash 5.1.5 on, users whose role lacks the `read` capability see blank topics/lessons, while admins see everything. Elementor's element cache had *masked* it for ~2 weeks until a cache clear exposed it. Testing solely as admin will miss this entire class of failure. **Also test with a user who is not a `student`** (for example `staff` + `author`, or `customer`); see [the finding](../reference/ppetoolkit-learndash-read-capability.md). Original incident write-up: `ansible-v2/docs/incidents/archive/2026-07/ppetoolkit-2026-07-07-learndash-outage-internal.md` (its "non-admin students" diagnosis is superseded by the finding).
 
 > **AD-HOC & SECURITY UPDATES NEED THIS CHECKLIST TOO (added 2026-07-07).** The monthly staged-update cycle is not the only risk window. Any out-of-cycle change -- automated security updates, a single-plugin fix (e.g. OttoKit), or a vendor auto-update -- can break rendering. After **any** update to this site, run at minimum Section 0 (Cache & Asset Integrity) as a non-admin, not just the monthly batch.
 
-> **🔒 LEARNDASH IS HELD AT 5.1.4 -- DO NOT UPDATE (added 2026-07-08, ticket #218633).** LearnDash **5.1.6 has a regression** that blanks Elementor-built topic/lesson content for non-admin students (admins bypass and see it fine). 5.1.5/5.1.6 contain **no security fixes**. Prod was reverted 5.1.6 → **5.1.4** and pinned at 5.1.4 in **Tools > Gorilla Essentials > Plugin Locks** (verified 2026-09-24; this replaced the earlier `gd-plugin-update-lock.php` mu-plugin, which has been removed). See [Pinning a Plugin Version](../sops/maintenance/staged-website-updates-SOP.md#pinning-a-plugin-version-gorilla-essentials). **Do NOT update LearnDash** until a fixed version (5.1.7+) is validated on staging **as an enrolled non-admin student**. Known-good **5.1.4 zip** archived at Kinsta `private/plugin-holds/`, `ansible-v2/tmp/sfwd-lms-5.1.4.zip`, and `/tmp/plugins/` -- SHA256 `96c3ac2e9e21d1c479a30f5bbe967a0575258f5b5dc7be5949b738af0a05c537`. Rollback of the 5.1.6 build: prod `~/sfwd-lms-5.1.6.bak.20260708-072252.tgz`. **After ANY future LearnDash update, test topic/lesson rendering as a non-admin student** (run [tests/console/ppetoolkit-console-checks.js](../tests/console/ppetoolkit-console-checks.js) as the dedicated enrolled student).
+> **LEARNDASH AND THE `read` CAPABILITY (updated 2026-10-29, ticket #218633).** From LearnDash 5.1.5 on, a user whose role lacks the WordPress `read` capability sees blank topics/lessons and "0/0 Steps", even with course access. That, not a general non-admin bug, is why content went blank in July, and why LearnDash was held at 5.1.4 until 2026-10-29. On 2026-10-29 `read` was added to the `staff`, `author`, `editor`, `contributor` and `customer` roles, LearnDash was updated to **5.2.2.1** on staging and production, and the Gorilla Essentials pin was removed. 5.2.2.1 closes CVE-2026-12843 and CVE-2026-12483, which affected 5.1.4. **Before and after any LearnDash update, confirm that every role which should see course content has `read`** (Section 8). `subscription_ended` and `free_tour` deliberately have no `read`, and users with no role get none; whether those users should keep access is waiting on the client. Full write-up, including how it was proven: [reference/ppetoolkit-learndash-read-capability.md](../reference/ppetoolkit-learndash-read-capability.md). Rollback: reinstall LearnDash **5.1.4** and pin it again (zip archived at Kinsta `private/plugin-holds/` and `ansible-v2/tmp/sfwd-lms-5.1.4.zip`, SHA256 `96c3ac2e9e21d1c479a30f5bbe967a0575258f5b5dc7be5949b738af0a05c537`).
 
 ---
 
@@ -27,7 +27,7 @@
 > **Fast path:** while logged in as the enrolled student, paste the all-in-one snippet from [Browser Console Regression Checks](../guides/browser-console-regression-checks.md) into the Chrome console on a course, lesson, topic, and quiz page. It checks non-admin render, CSS 404s, session/role, and quiz presence in seconds, then step through the boxes below.
 
 - [ ] After updates, clear **both** caches: WP Rocket (if active) **and** the Kinsta full-page cache (MyKinsta > Caching, or "Clear Caches" in the admin bar)
-- [ ] In a separate/incognito browser, log in as an **enrolled non-admin student** (keep an admin session open in another browser to compare)
+- [ ] In a separate/incognito browser, log in as an **enrolled non-admin student** (keep an admin session open in another browser to compare). Repeat the render checks as an enrolled **`staff` + `author`** or **`customer`** user
 - [ ] Open a **course**, a **lesson**, AND a **topic** -- confirm the **body content and layout** render for the student (not just the sidebar/title bar)
 - [ ] Specifically open an **Elementor-built topic** (e.g. `/topic/cardiac-disorders/`, `/topic/cervical-spine-injuries/`) -- these depend on generated Elementor CSS files
 - [ ] Open DevTools > **Network** > filter **CSS** > hard-reload. Confirm **no stylesheet returns 404**. A 404 on an Elementor `post-<ID>.css` or `custom-frontend.min.css` means blank content for students.
@@ -110,7 +110,7 @@
 - [ ] **Certificate Builder:** Certificate builder admin page loads, existing certificates render correctly
 - [ ] **LearnDash - Elementor:** LearnDash Elementor widgets render on pages that use them
 - [ ] **LearnDash - GravityForms Integration:** Form-based enrollment or triggers function (if configured)
-- [ ] **SnapOrbital Notes:** Students can view and create notes on course/lesson pages, [learndash_my_notes] shortcode works
+- [ ] **SnapOrbital Notes:** Students can view and create notes on course/lesson pages, [learndash_my_notes] shortcode works. Still on 1.8: updates from 1.8 need a manual install (vendor notice)
 - [ ] **Uncanny Toolkit for LearnDash:** Module settings page loads, enabled modules function correctly
 - [ ] **Uncanny Toolkit Pro for LearnDash:** Pro module settings page loads, enabled pro modules function correctly
 
@@ -151,10 +151,10 @@
 - [ ] Student sees only their enrolled courses
 - [ ] Instructor/admin login works
 - [ ] Role-based content restrictions function (e.g., enrolled-only content is gated)
+- [ ] **Roles that should see course content have `read`** (`student`, `subscriber`, `group_leader`, `staff`, `author`, `editor`, `contributor`, `customer`). Over SSH: `wp eval 'foreach(wp_roles()->roles as $k=>$r) echo $k, "=", empty($r["capabilities"]["read"])?"NO":"read", "\n";'`. A missing `read` blanks LearnDash content for that role
 - [ ] Logout works
 - [ ] Frontend Reset Password: Frontend reset page loads and sends email
-- [ ] **LoginPress:** Custom login page displays correctly
-- [ ] **LoginPress Pro:** Custom login styling and features are active
+- [ ] **LoginPress / LoginPress Pro:** inactive on 2026-10-29 (whether to delete them is undecided); skip unless reactivated
 
 ---
 
@@ -181,8 +181,8 @@
 ## 11. Other Plugins
 
 - [ ] Code Snippets: Snippets page loads, active snippets are running (check a page that uses custom code)
-- [ ] LightStart: Maintenance mode is NOT accidentally enabled (site should be live)
-- [ ] Reusable Content & Text Blocks: Shortcodes render content correctly
+- [ ] Gorilla Essentials: Tools > Gorilla Essentials loads; Site Hygiene shows email blocking on staging ("Outbound email is being blocked right now")
+- [ ] PPE Content Blocks: content blocks render on pages that use them
 - [ ] Stream: Activity log shows recent events in admin
 - [ ] OttoKit: Dashboard loads, automations are running
 - [ ] WP Mail SMTP: Settings page loads, connection status shows working
@@ -209,54 +209,72 @@
 
 ## Plugin Version Table
 
-> **Note (2026-07-07): this table predates the mid-2026 update rounds and is out of date.** Confirmed live since: Elementor **4.1.4**, Elementor Pro **4.1.2**, OttoKit **1.1.32**, LearnDash on the 5.x line, LearnDash - Elementor 1.0.11. Re-inventory before the next cycle -- run `wp plugin list` on the site (SSH in `ansible-v2/docs/reference/client-access.md`) and refresh every row.
+**Captured from production 2026-10-29, after the October round**, via `wp plugin list --fields=name,title,status,version --format=csv`.
 
-| # | Plugin | Current Version | Update Available | Notes |
-|---|--------|----------------|-----------------|-------|
-| 1 | Code Snippets | 3.9.4 | 3.9.5 | |
-| 2 | Elementor | 3.34.4 | 3.35.4 | |
-| 3 | Elementor Pro | 3.34.4 | 3.35.1 | |
-| 4 | Embed Optimizer | 1.0.0-beta3 | - | |
-| 5 | Enhanced Responsive Images | 1.7.0 | - | |
-| 6 | Frontend Reset Password | 1.3.1 | 1.3.3 | |
-| 7 | Git Updater | 12.22.0 | - | |
-| 8 | GP Premium | 2.5.5 | - | Inactive |
-| 9 | Gravity Forms | 2.9.26 | 2.9.27 | |
-| 10 | Gravity Forms + Custom Post Types | 3.1.29 | - | |
-| 11 | Gravity Forms ActiveCampaign Add-On | 2.2.0 | - | |
-| 12 | Gravity Forms All Fields Template | 0.9.3 | - | |
-| 13 | Gravity Forms Survey Add-On | 4.2.1 | - | |
-| 14 | Gravity Forms User Registration Add-On | 5.4.0 | - | |
-| 15 | Gravity PDF | 6.14.1 | - | |
-| 16 | Imagify | 2.2.7 | - | |
-| 17 | Index WP MySQL For Speed | 1.5.6 | - | |
-| 18 | LD - Quiz Customization Question Bank | 2.1.0 | - | **Custom code** (WisdmLabs) |
-| 19 | LearnDash LMS | 4.25.8.1 | 5.0.1 | **MAJOR VERSION** |
-| 20 | LearnDash LMS - Certificate Builder | 1.1.4 | - | |
-| 21 | LearnDash LMS - Elementor | 1.0.11 | - | |
-| 22 | LearnDash LMS - GravityForms Integration | 2.1.3 | - | |
-| 23 | LightStart | 2.6.20 | - | |
-| 24 | LoginPress | 6.1.2 | - | |
-| 25 | LoginPress Pro | 6.1.2 | - | |
-| 26 | Modern Image Formats | 2.6.1 | - | |
-| 27 | NinjaFirewall (WP Edition) | 4.8.3 | - | |
-| 28 | NinjaScanner | 3.2.8 | - | |
-| 29 | OttoKit | 1.1.20 | - | |
-| 30 | PNG to JPG | 4.5 | - | |
-| 31 | Reusable Content & Text Blocks by Loomisoft | 1.4.3 | - | |
-| 32 | SnapOrbital Notes for LearnDash | 1.8 | - | |
-| 33 | Speculative Loading | 1.6.0 | - | |
-| 34 | Stream | 4.1.1 | - | |
-| 35 | Sucuri Security | 2.6 | - | |
-| 36 | Uncanny Toolkit for LearnDash | 3.8.0.2 | - | |
-| 37 | Uncanny Toolkit Pro for LearnDash | 4.4 | - | |
-| 38 | Wisdmlabs Quiz button Customization | 1.0.0 | - | **Custom code** (WisdmLabs) |
-| 39 | WP Mail SMTP | 4.7.1 | - | |
-| 40 | WP Rocket | 3.20.3 | - | Inactive |
-| 41 | WP Rocket - Change Remove Unused CSS Parameters | - | - | Inactive |
-| 42 | WPFront User Role Editor | 4.2.4 | - | |
+**Pending at capture:** only SnapOrbital Notes (see note). WordPress core 7.1.4, child theme `gp-ppetoolkit` 3.14.56 (parent GeneratePress 3.6.1).
 
-**Updates currently available (6):** Code Snippets 3.9.5, Elementor 3.35.4, Elementor Pro 3.35.1, Frontend Reset Password 1.3.3, Gravity Forms 2.9.27, LearnDash LMS 5.0.1 (MAJOR)
+| # | Plugin | Slug | Version | Notes |
+|---|--------|------|---------|-------|
+| 1 | Code Snippets | `code-snippets` | 4.0.0 |  |
+| 2 | Elementor | `elementor` | 4.3.5 |  |
+| 3 | Elementor Pro | `elementor-pro` | 4.3.2 |  |
+| 4 | Embed Optimizer | `embed-optimizer` | 1.0.0-beta6 |  |
+| 5 | Enhanced Responsive Images | `auto-sizes` | 1.8.0 |  |
+| 6 | Frontend Reset Password | `frontend-reset-password` | 1.3.3 |  |
+| 7 | Git Updater | `git-updater` | 14.4.3 |  |
+| 8 | Gorilla Essentials | `gorilla-essentials` | 0.3.17 |  |
+| 9 | Gravity Forms | `gravityforms` | 3.2.1 |  |
+| 10 | Gravity Forms + Custom Post Types | `gravity-forms-custom-post-types` | 3.1.33 |  |
+| 11 | Gravity Forms ActiveCampaign Add-On | `gravityformsactivecampaign` | 2.2.0 |  |
+| 12 | Gravity Forms All Fields Template | `gw-gravity-forms-all-fields-template` | 0.9.3 |  |
+| 13 | Gravity Forms Survey Add-On | `gravityformssurvey` | 4.2.3 |  |
+| 14 | Gravity Forms User Registration Add-On | `gravityformsuserregistration` | 5.5.2 |  |
+| 15 | Gravity PDF | `gravity-pdf` | 6.18.0 |  |
+| 16 | Imagify | `imagify` | 2.3.4 |  |
+| 17 | Index WP MySQL For Speed | `index-wp-mysql-for-speed` | 1.6.0 |  |
+| 18 | LD - Quiz Customization Question Bank | `wisdmlabs-quiz-customization-question-bank` | 2.1.0 | **Custom code** (WisdmLabs) |
+| 19 | LearnDash LMS | `sfwd-lms` | 5.2.2.1 | Updated from 5.1.4 on 2026-10-29 after roles got `read`. No longer pinned |
+| 20 | LearnDash LMS - Certificate Builder | `learndash-certificate-builder` | 1.1.5 |  |
+| 21 | LearnDash LMS - Elementor | `learndash-elementor` | 1.0.12 |  |
+| 22 | LearnDash LMS - GravityForms Integration | `learndash-gravity-forms` | 2.1.3 |  |
+| 23 | Modern Image Formats | `webp-uploads` | 2.7.1 |  |
+| 24 | NinjaFirewall (WP Edition) | `ninjafirewall` | 4.9.2 |  |
+| 25 | OttoKit | `suretriggers` | 1.1.42 |  |
+| 26 | PNG to JPG | `png-to-jpg` | 4.6 |  |
+| 27 | PPE Content Blocks | `ppe-content-blocks` | 1.1.2 |  |
+| 28 | Safe SVG | `safe-svg` | 2.5.2 |  |
+| 29 | SnapOrbital Notes for LearnDash | `snaporbital-notes-for-learndash` | 1.8 | 2.0.9 available but cannot auto-update: vendor says updates from 1.8 and below need a manual install (https://docs.snaporbital.com/support/) |
+| 30 | Speculative Loading | `speculation-rules` | 1.7.0 |  |
+| 31 | Stream - Activity Log & Audit Trail | `stream` | 4.4.0 |  |
+| 32 | Sucuri Security - Auditing, Malware Scanner and Hardening | `sucuri-scanner` | 2.8.1 |  |
+| 33 | Uncanny Toolkit for LearnDash | `uncanny-learndash-toolkit` | 3.8.2 |  |
+| 34 | Uncanny Toolkit Pro for LearnDash | `uncanny-toolkit-pro` | 4.4.2 |  |
+| 35 | Wisdmlabs Quiz button  Customization | `wdm_quiz_button_custom` | 1.0.0 | **Custom code** (WisdmLabs) |
+| 36 | WP Mail SMTP | `wp-mail-smtp` | 4.10.3 |  |
+| 37 | WPFront User Role Editor | `wpfront-user-role-editor` | 4.2.5 |  |
+
+### Inactive (installed, not active)
+
+| Plugin | Slug | Version |
+|--------|------|---------|
+| GP Premium | `gp-premium` | 2.5.5 |
+| LoginPress | `loginpress` | 6.2.5 |
+| LoginPress Pro | `loginpress-pro` | 6.2.3 |
+| NinjaScanner | `ninjascanner` | 3.3.1 |
+| Reusable Content & Text Blocks by Loomisoft | `loomisoft-content-blocks` | 1.4.3 |
+| WP Rocket | `wp-rocket` | 3.20.3 |
+| WP Rocket | Change Remove Unused CSS Parameters | `wp-rocket-rucss-change-parameters` | - |
+
+### Must-use
+
+| Plugin | Slug | Version |
+|--------|------|---------|
+| Activity Log Plugin | `activity-log-plugin` | 1.0.0 |
+| Code Profiler (mu-plugin) | `0----code-profiler` | 1.0 |
+| Index WP MySQL For Speed Upgrade Filter for mu-plugins. | `index-wp-mysql-for-speed-update-filter` | 1.6.0 |
+| Kinsta Must-use Plugins | `kinsta-mu-plugins` | 3.6.1 |
+| LearnDash LMS Multisite | `learndash-multisite` | 1.0.0 |
+| NinjaFirewall WP (mu-plugin) | `0-ninjafirewall` | 1.0 |
 
 ---
 
@@ -264,7 +282,8 @@
 
 - [Staged Website Updates SOP](../sops/maintenance/staged-website-updates-SOP.md)
 - [Visual Regression Testing Guide](../guides/visual-regression-testing-guide.md)
+- [ppetoolkit.com: Blank Content and the `read` Capability](../reference/ppetoolkit-learndash-read-capability.md)
 
 ---
 
-*Last updated: 2026-07-07 (added Section 0 Cache & Asset Integrity + non-admin testing rule + ad-hoc-update rule after the LearnDash blank-content incident 2026-07-07)*
+*Last updated: 2026-10-29 (LearnDash 5.2.2.1 after the `read` role fix; plugin table refreshed from production)*

@@ -1,6 +1,6 @@
 # Test Accounts
 
-**Last updated:** 2026-07-14
+**Last updated:** 2026-10-29
 **Purpose:** Document the logins used for regression testing across the three PPE Medical sites, and why ppetoolkit.com testing must use an enrolled **non-admin student**. Passwords are NOT stored here (see Credential handling below).
 
 ---
@@ -16,6 +16,8 @@
 ---
 
 ## ppetoolkit.com -- dedicated non-admin student (PROVISION THIS)
+
+> **Test two users, not one (added 2026-10-29).** A `student` account is not enough on its own. The blank-content bug behind #218633 hits users whose role lacks the `read` capability (`staff`, `author`, `editor`, `contributor`, `customer` on this site), and a `student` has `read`, so it passes even while the bug is present. Those roles were given `read` on 2026-10-29, but always test with an enrolled non-`student` user as well, so a role that loses `read` again is caught. On staging, `test_user123` can be switched between `student` and `staff` + `author` for this; set it back to `student` afterwards. See [the finding](ppetoolkit-learndash-read-capability.md).
 
 The canonical render test must run as an **enrolled, non-admin student**: admins bypass the access gate and cache and see content even when students get a blank page (root cause of #218633). An un-enrolled subscriber is NOT a valid test either -- it only ever sees the enrollment gate, so it looks "fine" while enrolled students are blank.
 

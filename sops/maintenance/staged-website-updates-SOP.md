@@ -1,9 +1,9 @@
 # SOP: Staged Website Updates for PPE Medical
 
-**Version:** 1.3
+**Version:** 1.4
 **Date:** 2026-02-11
 **Status:** Active
-**Last updated:** 2026-09-24 (v1.3 added "Pinning a Plugin Version (Gorilla Essentials)"; v1.2, 2026-07-14, added the per-site browser console regression checks in tests/console/ to Steps 4 & 8 and the Out-of-Cycle section; v1.1 added the non-admin testing rule after the 2026-07-07 ppetoolkit.com LearnDash/Elementor blank-content incident)
+**Last updated:** 2026-10-29 (v1.4, from the October 2026 cycle, added: the update window; staging email blocking via Gorilla Essentials, with why "Always" beats "Automatic"; staging checkout setup for ppemedical.com (Stripe test mode, SaferCheckout country block); staging license-error notes; the Password Protected REST check and two-cache clear for ppemedevents.com; the warning that deleting Gorilla Essentials wipes its pins; testing ppetoolkit.com as a non-`student` role; the LearnDash pin lifted; v1.3 added "Pinning a Plugin Version (Gorilla Essentials)"; v1.2, 2026-07-14, added the per-site browser console regression checks in tests/console/ to Steps 4 & 8 and the Out-of-Cycle section; v1.1 added the non-admin testing rule after the 2026-07-07 ppetoolkit.com LearnDash/Elementor blank-content incident)
 **Last reviewed by:** Technical Lead
 **Applies to:** Maintenance Technician, Technical Lead
 **Purpose:** Provide a controlled, repeatable process for applying WordPress updates across PPE Medical's three websites using staging environments to prevent production issues
@@ -109,15 +109,15 @@ A pin is enforced in four places, so it holds however the update is attempted:
 
 Updates **at or below** the pinned version are still allowed. A pin can also freeze WordPress core (**WordPress Core** section on the same tab).
 
-### Currently pinned (verified 2026-09-24)
+### Currently pinned (verified 2026-10-29)
 
 | Site | Plugin | Pinned at | Reason |
 |------|--------|-----------|--------|
-| ppetoolkit.com | LearnDash LMS (`sfwd-lms`) | 5.1.4 | 5.1.6 blanks course content for students, #218633 |
+| ppetoolkit.com | none | - | LearnDash was pinned at 5.1.4 from 2026-07-08 to 2026-10-29 (#218633). Lifted after user roles were given `read`; see [the finding](../../reference/ppetoolkit-learndash-read-capability.md) |
 | ppemedical.com | none | - | - |
 | ppemedevents.com | none | - | - |
 
-The ppetoolkit.com pin replaced the earlier `gd-plugin-update-lock.php` mu-plugin, which is no longer on the server. Pins are stored in the database, so a production-to-staging push copies them to staging.
+Pins are stored in the database (the `gorilla_essentials_settings` option), so a production-to-staging push copies them to staging. **Deleting the Gorilla Essentials plugin deletes that option, and every pin with it.** Write the settings down before deleting or reinstalling the plugin, and re-enter them afterwards.
 
 ### Add, change or remove a pin
 
@@ -136,12 +136,12 @@ wp option get gorilla_essentials_settings --format=json | grep -o '"locks".*'
 - A release has broken staging or production, and the vendor has not yet shipped a fix
 - The Technical Lead has asked for a plugin to be held (for example, while waiting for a vendor fix)
 
-Record each pin in the site's regression checklist (see the LearnDash hold note in the ppetoolkit.com checklist) so the next person knows why it is held and what "fixed" looks like.
+Record each pin in the site's regression checklist so the next person knows why it is held and what "fixed" looks like.
 
 ### During an update cycle
 
 - A pinned plugin **will not appear** in the list of available updates. This is expected, not a fault.
-- Before lifting a pin, confirm the new version fixes the original problem **on staging**, using the test that caught it (for LearnDash: render as an enrolled non-admin student).
+- Before lifting a pin, confirm the new version fixes the original problem **on staging**, using the test that caught it. Find the cause, not just the symptom: the 2026-07 LearnDash pin was set for a "non-admin" bug that turned out to be roles missing `read`.
 
 ---
 
@@ -219,11 +219,17 @@ Update sites in this order to build confidence from simplest to most complex:
 
 | Order | Site | Plugins | Risk Level | Key Concern |
 |-------|------|---------|------------|-------------|
-| 1st | ppemedevents.com | 11 | Standard | Events Calendar |
-| 2nd | ppemedical.com | 42 | High | WooCommerce + payment processing |
-| 3rd | ppetoolkit.com | 42 | **Critical** | LearnDash + custom QBank code |
+| 1st | ppemedevents.com | 12 | Standard | Events Calendar + password wall |
+| 2nd | ppemedical.com | 46 | High | WooCommerce + payment processing |
+| 3rd | ppetoolkit.com | 37 | **Critical** | LearnDash + custom QBank code, roles need `read` |
 
 **Repeat Steps 1-9 for each site, in the order above.**
+
+> **Tip:** A live-to-staging push takes several minutes and locks the environment while it runs. Start the Step 2 push for all three sites at the beginning of the session so each staging copy is ready when you reach it.
+
+### Update Window
+
+The client is in California (Pacific time). Apply **production** updates (Step 7) outside their business hours, ideally **8 PM to 5 AM Pacific**. Staging work (Steps 2-5) can happen any time. If you are new to this process, start production early in the window so there is time to restore and retest before morning.
 
 ---
 
@@ -253,6 +259,13 @@ Update sites in this order to build confidence from simplest to most complex:
 5. Confirm the push and wait for it to complete (typically 2-5 minutes)
 6. Once complete, log into the **staging** WordPress admin
 7. **Verify:** Navigate to a few key pages to confirm staging matches production
+8. **Block outbound email on staging.** The push copies production's settings, so staging arrives able to email real customers. In the staging admin, go to **Tools > Gorilla Essentials > Site Hygiene** and set **Block outbound email** to **"Always block outside production, including a hostname guess"**, then save.
+   - **Why "Always" rather than "Automatic".** Kinsta staging sets `WP_ENVIRONMENT_TYPE=staging` as a server environment variable for **web** requests, so "Automatic" does block there (the Site Hygiene screen shows "Outbound email is being blocked right now"). WP-CLI sessions do **not** get that variable: from the CLI the same staging site reports `production`, and "Automatic" does not block. Anything that sends mail through WP-CLI, including a host-run system cron, would get through. ppemedical.com staging has `DISABLE_WP_CRON` set, so its scheduled jobs (subscription emails) are run by the host, not by page visits. "Always" blocks in both contexts (verified 2026-10-28: ppemedical.com staging, CLI, `blocking: true`). On ppemedevents.com, WP-Cron runs over HTTP, so "Automatic" also works there, but "Always" is the safe default for every staging site.
+   - **Verify:** the Gorilla Essentials environment badge shows staging, and the Site Hygiene screen shows **"Outbound email is being blocked right now"**. If WP Mail SMTP Pro reports that sending is blocked, that is expected.
+   - Gorilla Essentials replaces the separate "disable emails" plugin that was previously used on staging. Do not install it again.
+   - Never set email blocking on **production** in a way that stops it sending. Production must send order and subscription emails.
+   - **Gorilla Essentials must be 0.3.x** for Site Hygiene to exist. ppemedevents.com was stuck on 0.1.5 until 2026-10-28. The likely cause: its Git Updater token for the private `gorilla-devops/gorilla-essentials` repo was an older 40-character token that no longer worked (not tested directly), and the shared Kinsta IP had used up GitHub's anonymous rate limit ("API rate limit exceeded", "Automatic update is unavailable for this plugin"). Fix: put a working token in **Settings > Git Updater > Settings > GitHub**, click **Refresh Cache**, then update.
+   - **Checking from WP-CLI:** `wp eval '$g=new GorillaEssentials_Email_Guard(); echo json_encode($g->status());'` shows `"blocking":true` on staging only when the setting is "Always". With "Automatic" it shows `false` from the CLI even though web requests are blocked (see above), so a `false` there on "Automatic" is not proof that the web side sends.
 
 > **Note:** Pushing live to staging changes the staging server's SSH host key. If you try to SSH into staging after a push and see a "REMOTE HOST IDENTIFICATION HAS CHANGED" error, clear the old key first (quotes required in zsh):
 > ```bash
@@ -277,6 +290,7 @@ Updates can be applied via the WordPress admin dashboard or via WP-CLI over SSH.
 4. Select all plugins with updates available
 5. Apply updates (bulk update is acceptable for this site)
 6. Clear all caches: **MyKinsta > Tools > Clear Cache**
+7. If **Password Protected** was updated, run `bash tests/http/ppemedevents-rest-checks.sh` straight away (production) and confirm **Settings > Password Protected > Allow REST API** is **off**. Version 2.8.5 fixed a bug that had been keeping REST blocked with that setting on, and the 2026-10-28 update exposed the REST API publicly as a result. If you change that setting, clear **both** the Kinsta server cache (Tools > Clear cache) and the **Edge cache** (Caching > Edge Caching > Clear cache) before rerunning the check: the Edge cache keeps serving the old public REST responses for up to 24 hours.
 
 **For ppemedical.com (high risk):**
 1. Update WordPress core first if available
@@ -288,6 +302,10 @@ Updates can be applied via the WordPress admin dashboard or via WP-CLI over SSH.
 4. After each update, do a quick spot-check of the site frontend
 5. Clear all caches: **MyKinsta > Tools > Clear Cache**
 
+> **ppemedical.com staging notes (2026-10-28):**
+> - Some licensed plugins refuse to update on staging with errors such as "A valid URL was not provided" or "unauthorized". The license is tied to the production domain, so this is expected on staging. Note which plugins they were and confirm they update on production in Step 7.
+> - After WooCommerce updates, more WooCommerce extension updates can appear in the list. Run the update again until the list is empty (apart from the license errors above).
+
 **For ppetoolkit.com (critical risk):**
 1. Update WordPress core first if available
 2. **Update LearnDash LMS ALONE first** (no other plugins)
@@ -297,6 +315,7 @@ Updates can be applied via the WordPress admin dashboard or via WP-CLI over SSH.
    - Verify answer submission works
    - Check the QBank admin interface
 4. If QBank works: proceed with remaining plugin updates one at a time
+   - Check topic/lesson rendering as an enrolled `student` **and** as an enrolled `staff` + `author` or `customer` user. A role without `read` gets blank content from LearnDash 5.1.5 on, and a `student` test alone will not show it
 5. If QBank is broken: **STOP immediately.** Do not update other plugins. Notify the Technical Lead.
 6. Clear all caches: **MyKinsta > Tools > Clear Cache**
 
@@ -375,6 +394,9 @@ wp cache flush
    - ppemedevents.com: [tests/console/ppemedevents-console-checks.js](../../tests/console/ppemedevents-console-checks.js) (events list, single event)
    - See [Browser Console Regression Checks](../../guides/browser-console-regression-checks.md) for the page lists and how to read results. A `FAIL` here means stop and investigate before working the rest of the checklist.
 3. Execute every test item against the **staging** site
+   - **ppemedical.com checkout on staging needs setup first.** After a push, Stripe is not connected on staging and checkout shows no card option. Go to **WooCommerce > Settings > Payments > Stripe > Configure connection** and **create or connect a test account** (a blank Stripe test account is fine), then pay with a Stripe test card (for example `4242 4242 4242 4242`, any future expiry, any CVC).
+   - **SaferCheckout Lite blocks checkout from many countries**, including the Philippines. A blocked attempt shows as a **Failed** order with a risk score of 100. On **staging only**, untick your own country under **WooCommerce > Settings > SaferCheckout Lite** (location settings) and save. **Never change this on production.** The next live-to-staging push resets it.
+   - The order confirmation email does not arrive on staging because email is blocked (Step 2). That is expected. Confirm the order shows in **WooCommerce > Orders** instead.
 4. Document pass/fail results for each item
 5. If **critical issues** are found (site errors, broken checkout, broken quizzes, broken event registration):
    - **STOP. Do not proceed to production.**
@@ -406,6 +428,7 @@ wp cache flush
 3. Click **Manual backups**
 4. Click **Create backup**
 5. Add a label: `Pre-update backup - YYYY-MM-DD - Monthly updates`
+   - Delete manual backups from earlier cycles first if they are no longer needed. On the WooCommerce sites (ppemedical.com) an old backup is not a safe restore point: restoring it would lose every order, renewal and subscription change since it was taken.
 6. Wait for the backup to complete
 7. **Verify:** The manual backup appears in the backup list with the correct label
 
@@ -421,9 +444,10 @@ wp cache flush
 2. Apply the **exact same updates** that were tested on staging -- no additional updates
 3. Follow the same update approach used for staging:
    - **ppemedevents.com:** Bulk update is acceptable
-   - **ppemedical.com:** One at a time, WooCommerce ecosystem in order
+   - **ppemedical.com:** One at a time, WooCommerce ecosystem in order. Do **not** use Select all > Update on this site, on staging or production
    - **ppetoolkit.com:** LearnDash ALONE first, test QBank, then other plugins
-4. Clear all caches: **MyKinsta > Tools > Clear Cache**
+4. Clear all caches: **MyKinsta > Tools > Clear Cache**, plus the site's own cache plugin if it has one
+5. Check **Dashboard > Updates** again. Plugins that failed on staging with license errors should update here; anything still pending needs a reason before you move on.
 
 **Outcome:** Production site is updated with the same versions tested on staging.
 

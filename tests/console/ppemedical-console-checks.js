@@ -1,6 +1,6 @@
 /**
  * PPE Medical -- ppemedical.com browser console regression checks
- * Site profile: WooCommerce + dual Authorize.Net gateways + WooCommerce Subscriptions (Risk: HIGH)
+ * Site profile: WooCommerce + Stripe/PayPal checkout + Authorize.Net (renewals only) + WooCommerce Subscriptions (Risk: HIGH)
  *
  * WHAT IT TESTS
  *   - Visible WooCommerce errors on the page (a rendered .woocommerce-error = broken flow)
@@ -8,7 +8,7 @@
  *   - Shop            : product cards render
  *   - Product          : price + Add to Cart button + express checkout buttons (Stripe / PayPal) render
  *   - Cart             : cart renders (items or a proper empty-cart message)
- *   - Checkout         : payment gateways render (Authorize.Net present) + Place Order button present
+ *   - Checkout         : Stripe renders, Authorize.Net (authnet) is hidden + Place Order button present
  *   - Account          : My Account renders (login form or dashboard)
  *
  * HOW TO RUN
@@ -109,9 +109,14 @@
       add('Checkout payment', 'FAIL', 'Payment section present but NO payment gateways rendered -- payment is down.');
     } else {
       const ids = gateways.map((g) => g.value || g.id).filter(Boolean);
-      const hasAuthNet = ids.some((i) => /auth|net|accept/i.test(i));
-      add('Checkout gateways', hasAuthNet ? 'PASS' : 'WARN',
-        gateways.length + ' gateway(s): ' + ids.join(', ') + (hasAuthNet ? '' : ' -- verify an Authorize.Net gateway is present.'));
+      // Stripe is the card gateway. Authorize.Net (authnet) stays enabled for subscription renewals
+      // but must be hidden from checkout by the child theme flag hide_authnet_gateway (#960885).
+      const hasStripe = ids.some((i) => /^stripe/i.test(i));
+      const hasAuthNet = ids.some((i) => /authnet|authorize_net/i.test(i));
+      const list = gateways.length + ' gateway(s): ' + ids.join(', ');
+      if (hasAuthNet) add('Checkout gateways', 'FAIL', list + ' -- Authorize.Net is visible on checkout; it should be hidden (check hide_authnet_gateway in the child theme).');
+      else if (!hasStripe) add('Checkout gateways', 'WARN', list + ' -- Stripe card gateway not found.');
+      else add('Checkout gateways', 'PASS', list + ' (Authorize.Net hidden as expected).');
     }
     add('Checkout Place Order', placeOrder ? 'PASS' : 'FAIL', placeOrder ? 'Place Order button present (not clicked).' : 'No Place Order button found.');
   }

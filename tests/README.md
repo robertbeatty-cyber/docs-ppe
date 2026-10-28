@@ -1,6 +1,6 @@
 # Tests
 
-**Last updated:** 2026-09-24
+**Last updated:** 2026-10-29
 **Purpose:** Automated regression tests for the three PPE Medical websites, run after WordPress and plugin updates. This complements the manual [checklists](../checklists/) and the [visual regression testing guide](../guides/visual-regression-testing-guide.md); it does not replace them.
 
 See the [Regression Test Automation Plan](../guides/regression-automation-plan.md) for scope, tiering, and design decisions.
@@ -27,7 +27,7 @@ Each site has its **own** console test because each site has a different surface
 | Site | Test file | Focus |
 |------|-----------|-------|
 | ppetoolkit.com | `console/ppetoolkit-console-checks.js` | Non-admin student render (the #218633 blank-content catcher), Elementor CSS 404s, QBank quiz |
-| ppemedical.com | `console/ppemedical-console-checks.js` | Checkout renders payment gateways (Authorize.Net), product/cart/account render |
+| ppemedical.com | `console/ppemedical-console-checks.js` | Checkout renders Stripe and hides Authorize.Net, product/cart/account render |
 | ppemedevents.com | `console/ppemedevents-console-checks.js` | Events Calendar list/month view and single-event render |
 | ppemedevents.com | `http/ppemedevents-rest-checks.sh` | Password wall still returns 401, OttoKit `sure-triggers/v1` reachable, TLS 1.2/1.3. Run from a terminal against production. Promoter itself is checked in the access log (checklist Section 2b) |
 

@@ -1,11 +1,11 @@
 # Regression Test Checklist: ppemedevents.com
 
-**Last updated:** 2026-09-24
-**Last executed:** never recorded
+**Last updated:** 2026-10-29
+**Last executed:** 2026-10-28 (staging, then production). **Section 2b failed on production, then fixed the same day:** the REST API was public after the Password Protected 2.8.5 update. "Allow REST API" was turned off and both the Kinsta server cache and the Edge cache were cleared, after which all REST checks passed (see 2b)
 **Site:** https://ppemedevents.com
 **Staging:** https://staging.ppemedevents.com
 **Risk level:** Standard
-**Total plugins:** 13 (12 active, 1 inactive), verified on production 2026-09-24
+**Total plugins:** 13 (12 active, 1 inactive), plus 4 must-use, verified on production 2026-10-28
 **Key risk areas:** The Events Calendar + Event Tickets + **Promoter sync through the password wall (see Section 2b)**
 
 > **The whole site is deliberately behind a site-wide password** (Password Protected plugin).
@@ -56,6 +56,8 @@
 Run this on **production** after every update, and whenever event emails are reported as not arriving.
 
 - [ ] Run `bash tests/http/ppemedevents-rest-checks.sh`. All checks pass: REST is walled (401), `sure-triggers/v1` is reachable (200), TLS negotiates
+- [ ] **Settings > Password Protected > "Allow REST API" is OFF** (`wp option get password_protected_rest` returns `0`). With it on, Password Protected 2.8.5 and later serve the REST API to anyone. Earlier versions had a bug that blocked REST anyway, which is why the site looked walled while the setting was on. The Promoter and OttoKit exceptions do not depend on this setting
+- [ ] **After any change to the wall, clear both Kinsta caches before testing:** MyKinsta > Tools > Clear cache **and** MyKinsta > Caching > Edge Caching > Clear cache. Kinsta's Edge cache stores REST responses for up to 24 hours (`s-maxage=86400`), so without both clears the check reports the cached copy, not the live site. A response header `x-kinsta-cache: HIT` means you are looking at the cache
 - [ ] **Promoter is getting through.** Over SSH, the recent Promoter requests in the access log return 200 (the logs keep only about 3 days):
   ```bash
   grep -h 209.87.149.23 ~/logs/access.log* | awk '{print $8}' | sort | uniq -c
@@ -112,29 +114,49 @@ case #52250357). Check the access log first. A reset tears down a working connec
 
 - [ ] OttoKit: Dashboard loads, automations are running (if configured)
 - [ ] Stream: Activity log shows recent events in admin
-- [ ] Password Protected: Verify site is NOT accidentally password-protected (should be publicly accessible)
-- [ ] Git Updater: Settings page loads
-- [ ] WP File Manager: File manager interface loads in admin
+- [ ] Password Protected: the site **is** password-protected. Logged out, `/events/` redirects to the password form (this is deliberate, see the note at the top)
+- [ ] Git Updater: Settings page loads. If it reports "API rate limit exceeded" it cannot see updates for Gorilla Essentials or the child theme; retry later
+- [ ] Gorilla Essentials: version matches the other two sites. If Git Updater says "Automatic update is unavailable", see SOP Step 2 (token + Refresh Cache)
+- [ ] Temporary Login Without Password: Settings page loads
+- [ ] WP File Manager: File manager interface loads in admin. Its `open_basedir` warnings in the PHP error log (`backup-storage.php` line 119, about 1,000 a day) were already there before the 2026-10-28 update
 
 ---
 
 ## Plugin Version Table
 
-| # | Plugin | Current Version | Update Available |
-|---|--------|----------------|-----------------|
-| 1 | Event Tickets | 5.27.4 | - |
-| 2 | Git Updater | 12.22.0 | - |
-| 3 | NinjaFirewall (WP Edition) | 4.8.3 | - |
-| 4 | Object Cache Pro | 1.25.1 | - (Inactive) |
-| 5 | OttoKit | 1.1.19 | 1.1.20 |
-| 6 | Password Protected | 2.7.12 | - |
-| 7 | Redirection | 5.6.1 | - |
-| 8 | Stream | 4.1.1 | - |
-| 9 | The Events Calendar | 6.15.15 | 6.15.16 |
-| 10 | WP File Manager | 8.0.2 | - |
-| 11 | WP Mail SMTP Pro | 4.7.1 | - |
+**Captured from production 2026-10-28, after the October round**, via `wp plugin list --fields=name,title,status,version,update_version --format=csv`.
 
-**Updates currently available (2):** OttoKit 1.1.20, The Events Calendar 6.15.16
+**Pending at capture: 0 plugin updates, 0 theme updates.** WordPress core 7.1.3 at capture (7.1.4 from 2026-10-29), child theme `child-ppemedevents` 1.0.2 (parent Twenty Ten 4.7). Git Updater was rate-limited by GitHub at capture, so updates for Gorilla Essentials and the child theme could not be checked.
+
+| # | Plugin | Slug | Version |
+|---|--------|------|---------|
+| 1 | Event Tickets | `event-tickets` | 5.30.2 |
+| 2 | Git Updater | `git-updater` | 14.4.3 |
+| 3 | Gorilla Essentials | `gorilla-essentials` | 0.3.17 (updated from 0.1.5 later on 2026-10-28) |
+| 4 | NinjaFirewall (WP Edition) | `ninjafirewall` | 4.9.2 |
+| 5 | OttoKit (SureTriggers) | `suretriggers` | 1.1.42 |
+| 6 | Password Protected | `password-protected` | 2.8.5 |
+| 7 | Redirection | `redirection` | 5.10.1 |
+| 8 | Stream | `stream` | 4.4.0 |
+| 9 | Temporary Login Without Password | `temporary-login-without-password` | 1.9.10 |
+| 10 | The Events Calendar | `the-events-calendar` | 6.18.2 |
+| 11 | WP File Manager | `wp-file-manager` | 8.0.6 |
+| 12 | WP Mail SMTP Pro | `wp-mail-smtp-pro` | 4.10.3 |
+
+### Inactive (installed, not active)
+
+| Plugin | Slug | Version |
+|--------|------|---------|
+| Object Cache Pro | `object-cache-pro` | 1.25.1 |
+
+### Must-use
+
+| Plugin | Slug | Version |
+|--------|------|---------|
+| GD Password Protected Allowlist | `gd-password-protected-allowlist` | 1.0.0 |
+| GD PP Allowlist - ppemedevents | `gd-pp-allowlist-ppemedevents` | 1.1.0 |
+| Kinsta MU Plugins | `kinsta-mu-plugins` | 3.6.1 |
+| NinjaFirewall WP (mu-plugin) | `0-ninjafirewall` | 1.0 |
 
 ---
 
@@ -145,4 +167,4 @@ case #52250357). Check the access log first. A reset tears down a working connec
 
 ---
 
-*Last updated: 2026-02-11*
+*Last updated: 2026-10-29*

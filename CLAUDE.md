@@ -23,7 +23,8 @@ This repository contains operational documentation for PPE Medical's three busin
 - LearnDash 5.0 changed REST API field names (`inProgress` to `in_progress`)
 - **The client specifically requested** staging testing before any LearnDash updates
 - Always update LearnDash ALONE first on staging, test QBank thoroughly, then proceed with other plugins
-- LearnDash is currently **pinned at 5.1.4** (#218633) via the Gorilla Essentials plugin
+- LearnDash is on **5.2.2.1** (updated 2026-10-29) and is **no longer pinned**. It was held at 5.1.4 from July to October (#218633)
+- **Why content went blank in July (proven 2026-10-29):** from LearnDash 5.1.5, users whose role lacks the `read` capability see blank lessons/topics. On 2026-10-29 `read` was added to `staff`, `author`, `editor`, `contributor` and `customer`. Any role that should see course content must keep `read`. See `reference/ppetoolkit-learndash-read-capability.md`
 
 ### Plugin Version Pinning - Gorilla Essentials
 - The **Gorilla Essentials** plugin (Gorilla DevOps, repo `gorilla-essentials`) is active on all three sites
@@ -32,13 +33,16 @@ This repository contains operational documentation for PPE Medical's three busin
 - See "Pinning a Plugin Version" in the staged website updates SOP
 
 ### ppemedical.com - Payment Processing
-- Runs WooCommerce with Authorize.Net (Enterprise) as the card gateway, plus Stripe and PayPal Payments (as of 2026-09-24 the second Authorize.Net gateway, CIM, is installed but inactive)
+- Runs WooCommerce with Stripe as the card gateway at checkout, plus PayPal Payments (#960885)
+- Authorize.Net (Enterprise, gateway id `authnet`) must stay **enabled**: most active subscriptions still renew through it. It is hidden from checkout only, by the child theme flag `hide_authnet_gateway` in `gp-ppemedical/functions.php`
+- Keep **both** Authorize.Net plugins active (Enterprise and CIM) for renewals of older customers on those gateways (operator decision 2026-10-28). Neither appears on checkout: Enterprise is hidden by the theme flag, and the CIM payment methods are disabled
 - Payment processing must be verified after every update cycle
 - WooCommerce Subscriptions handles recurring billing
 
 ### ppemedevents.com - Simplest Site
-- Only 13 plugins (vs 43-45 on the other two sites, as of 2026-09-24)
+- Only 13 plugins (vs 44-48 installed on the other two sites, as of 2026-10-29)
 - The whole site is **deliberately behind a site-wide password** (Password Protected plugin). Unauthenticated REST calls return 401 by design; only Promoter's IP and specific routes are allowlisted (see the ansible-v2 ppemedevents runbook)
+- Password Protected's **"Allow REST API" setting must stay OFF**. Before 2.8.5 a plugin bug blocked REST even with it on; 2.8.5 fixed that, so with it on the REST API is public (found 2026-10-28)
 - Standard Events Calendar implementation
 - Good candidate for updating first in any cycle
 

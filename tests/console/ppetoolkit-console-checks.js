@@ -5,14 +5,16 @@
  * WHAT IT TESTS
  *   - Session/role : are you a non-admin student? (admin sessions MASK the #218633 render bug)
  *   - Content render: is the topic/lesson body present, or blank? (the #218633 catcher)
+ *   - Step count   : "0/0 Steps" on a topic/lesson = LearnDash sees no steps for this user (no `read`)
  *   - Stylesheets  : did any Elementor CSS 404? (the 2026-07-07 asset symptom)
  *   - Debug leak   : leftover "template name :" template-engine echo
  *   - Quiz         : QBank quiz container + Start button custom text (read-only, never submits)
  *
  * HOW TO RUN
- *   1. In an INCOGNITO window, log in as the dedicated enrolled non-admin student
- *      (gd-qa-student -- see reference/test-accounts.md), NOT as an admin. Incognito + non-admin
- *      is essential: an admin session bypasses the cache and masks the #218633 render bug.
+ *   1. In an INCOGNITO window, log in as an enrolled non-admin user, NOT as an admin.
+ *      Test TWO users: a `student`, AND one whose role lacks `read` (staff / author / customer).
+ *      A `student` passes even when the bug is present, because it has `read`.
+ *      See reference/ppetoolkit-learndash-read-capability.md and reference/test-accounts.md.
  *   2. Open one of the test URLs below (a course, a lesson, an Elementor-built topic, or a quiz).
  *   3. DevTools > Console. If prompted, type "allow pasting". Paste this whole file, press Enter.
  *
@@ -57,23 +59,38 @@
 
   // --- GUARD RAIL: this run does not validate #218633 unless you are a non-admin on a content page ---
   if (editTools || !loggedIn || pageType === 'other') {
-    banner('THIS RUN PROVES NOTHING ABOUT #218633. Switch to LindeeAbe (enrolled student) and open a topic/lesson/quiz.', '#b00020');
+    banner('THIS RUN PROVES NOTHING ABOUT #218633. Log in as an enrolled non-admin (also test a role without `read`) and open a topic/lesson/quiz.', '#b00020');
   }
 
   // --- content render (topic / lesson) : the #218633 catcher ---
   if (pageType === 'topic' || pageType === 'lesson') {
-    const root = document.querySelector('article, main, #content, .learndash-wrapper') || document.body;
+    // Measure LearnDash's own content block (div.learndash#learndash_post_<id>), not the whole page.
+    // On 2026-10-29 a blank topic still scored text=732 when measured on <main>, because the
+    // sidebar course outline and header were counted as content.
+    const ldBlock = document.querySelector('.learndash[id^="learndash_post_"]');
+    const root = ldBlock || document.querySelector('article, main, #content, .learndash-wrapper') || document.body;
+    if (!ldBlock) add('Content block', 'WARN', 'LearnDash content block (div.learndash#learndash_post_*) not found; measuring the whole page instead, which can hide a blank topic.');
     const text = (root.innerText || '').trim();
     const widgets = root.querySelectorAll('.elementor-widget').length;
     const media = root.querySelectorAll('img, video, iframe').length;
     const declaredElementor = !!document.querySelector('[data-elementor-type]');
     const detail = 'text=' + text.length + ' chars, elementorWidgets=' + widgets + ', media=' + media;
-    if (text.length < 400 && widgets === 0 && media === 0) {
+    if (text.length < 200 && widgets === 0 && media === 0) {
       add('Content render', 'FAIL', 'Content region is effectively empty -- matches the #218633 blank-content symptom. ' + detail);
     } else if (declaredElementor && widgets === 0) {
       add('Content render', 'WARN', 'Elementor layout is declared but zero rendered widgets were found. ' + detail);
     } else {
       add('Content render', 'PASS', detail);
+    }
+  }
+
+  // --- step count : "0/0 Steps" means LearnDash found no course steps for this user ---
+  if (pageType === 'topic' || pageType === 'lesson') {
+    const steps = (document.body.innerText || '').match(/(\d+)\s*\/\s*(\d+)\s*Steps/i);
+    if (steps && steps[2] === '0') {
+      add('Step count', 'FAIL', '"' + steps[0] + '" -- LearnDash sees no steps for this user. Matches a role without the `read` capability (reference/ppetoolkit-learndash-read-capability.md).');
+    } else if (steps) {
+      add('Step count', 'PASS', steps[0]);
     }
   }
 
