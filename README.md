@@ -57,7 +57,7 @@ See [scripts/README.md](scripts/README.md) for usage instructions.
 
 | Document | Description |
 |----------|-------------|
-| [Test Accounts](reference/test-accounts.md) | Non-admin logins for student-facing render testing (private — see security note) |
+| [Test Accounts](reference/test-accounts.md) | Non-admin logins for student-facing render testing (private - see security note) |
 | [ppetoolkit.com: Blank Content and `read`](reference/ppetoolkit-learndash-read-capability.md) | Why lessons/topics go blank for some roles on LearnDash 5.1.6+, who is affected, and the plan before unpinning |
 
 ---
@@ -68,7 +68,7 @@ See [scripts/README.md](scripts/README.md) for usage instructions.
 |------|--------|
 | **Assigned to** | Maintenance Technician |
 | **Update schedule** | Monthly |
-| **Estimated time** | 1.5-2 hours per cycle (all three sites) |
+| **Estimated time** | 3-4 hours per cycle (all three sites) |
 | **Hosting** | Kinsta (MyKinsta dashboard) |
 | **Recommended update order** | ppemedevents.com -> ppemedical.com -> ppetoolkit.com |
 | **Escalation contact** | Technical Lead |

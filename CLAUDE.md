@@ -84,5 +84,5 @@ Key rules:
 ## Update Schedule
 
 - **Frequency:** Monthly
-- **Estimated time:** 1.5-2 hours per cycle (all three sites)
+- **Estimated time:** 3-4 hours per cycle (all three sites); ppemedical.com alone took about 1.5 hours in October 2026
 - **Recommended order:** ppemedevents.com (simplest) -> ppemedical.com -> ppetoolkit.com (highest risk)

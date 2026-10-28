@@ -24,7 +24,7 @@
 - [ ] Main navigation menu works (all top-level and dropdown items)
 - [ ] Footer links work correctly
 - [ ] Site search: N/A, the site has no search box (checked 2026-10-28)
-- [ ] Mobile responsive layout displays correctly (test on phone or browser dev tools)
+- [ ] Mobile responsive layout displays correctly (test on a real phone, not only browser dev tools)
 - [ ] No JavaScript console errors on key pages (homepage, shop, product page, cart, checkout)
 - [ ] SSL certificate is valid (padlock icon in browser)
 - [ ] Site loads within acceptable time (no obvious performance regression)
@@ -59,7 +59,7 @@
 - [ ] Stripe card fields display and accept input
 - [ ] Place order button is functional
 - [ ] Order confirmation page displays after successful order
-- [ ] Order confirmation email is sent
+- [ ] Order confirmation email is sent (production only. On staging it is blocked by design: confirm it did **not** arrive)
 - [ ] Order appears in WooCommerce > Orders in admin
 - [ ] WooCommerce > Settings > Payments: Stripe, PayPal and Authorize.net (`authnet`, title "Credit card") are all **enabled**
 - [ ] Plugins: **both** Authorize.Net plugins stay **active** ("WooCommerce Authorize.net Gateway (Enterprise)" and "WooCommerce Authorize.Net Gateway" (CIM)) for renewals of older customers. Do not deactivate either

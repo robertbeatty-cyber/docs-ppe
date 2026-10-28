@@ -1,9 +1,9 @@
 # SOP: Staged Website Updates for PPE Medical
 
-**Version:** 1.4
+**Version:** 1.5
 **Date:** 2026-02-11
 **Status:** Active
-**Last updated:** 2026-10-29 (v1.4, from the October 2026 cycle, added: the update window; staging email blocking via Gorilla Essentials, with why "Always" beats "Automatic"; staging checkout setup for ppemedical.com (Stripe test mode, SaferCheckout country block); staging license-error notes; the Password Protected REST check and two-cache clear for ppemedevents.com; the warning that deleting Gorilla Essentials wipes its pins; testing ppetoolkit.com as a non-`student` role; the LearnDash pin lifted; v1.3 added "Pinning a Plugin Version (Gorilla Essentials)"; v1.2, 2026-07-14, added the per-site browser console regression checks in tests/console/ to Steps 4 & 8 and the Out-of-Cycle section; v1.1 added the non-admin testing rule after the 2026-07-07 ppetoolkit.com LearnDash/Elementor blank-content incident)
+**Last updated:** 2026-10-28 (v1.5 added the October 2026 walkthrough video and where it differs from this SOP; email blocking set once on production so each push carries it to staging; a production console-check baseline before updating; closing the monthly ticket; a revised time estimate. v1.4, 2026-10-29, from the October 2026 cycle, added: the update window; staging email blocking via Gorilla Essentials, with why "Always" beats "Automatic"; staging checkout setup for ppemedical.com (Stripe test mode, SaferCheckout country block); staging license-error notes; the Password Protected REST check and two-cache clear for ppemedevents.com; the warning that deleting Gorilla Essentials wipes its pins; testing ppetoolkit.com as a non-`student` role; the LearnDash pin lifted; v1.3 added "Pinning a Plugin Version (Gorilla Essentials)"; v1.2, 2026-07-14, added the per-site browser console regression checks in tests/console/ to Steps 4 & 8 and the Out-of-Cycle section; v1.1 added the non-admin testing rule after the 2026-07-07 ppetoolkit.com LearnDash/Elementor blank-content incident)
 **Last reviewed by:** Technical Lead
 **Applies to:** Maintenance Technician, Technical Lead
 **Purpose:** Provide a controlled, repeatable process for applying WordPress updates across PPE Medical's three websites using staging environments to prevent production issues
@@ -29,7 +29,47 @@
 
 This SOP covers the complete staged update workflow for PPE Medical's three WordPress websites: ppemedical.com, ppetoolkit.com, and ppemedevents.com. It ensures that all plugin and WordPress core updates are tested on staging environments before being applied to production, reducing the risk of downtime or broken functionality.
 
-This procedure runs monthly and covers all three sites in a single update cycle. Estimated time: 1.5-2 hours.
+This procedure runs monthly and covers all three sites in a single update cycle. Allow **3-4 hours** for all three sites (estimate). ppemedical.com alone took about 1.5 hours in the October 2026 walkthrough below, most of it regression testing.
+
+---
+
+## Watch the Walkthrough First
+
+Watch **[the October 2026 ppemedical.com update cycle (Loom, about 85 min)](https://www.loom.com/share/3b2fe01330184433b6e51996fe6a409e)** before your first run. It covers ppemedical.com only; ppemedevents.com and ppetoolkit.com follow the same steps with their own checklists.
+
+| Time | What happens |
+|------|--------------|
+| 0:00 | Access you need: MyKinsta and this repository |
+| 1:21 | Site order, and why ppemedical.com went first this time |
+| 2:01 | Checking staging before the push: email blocked, environment badge |
+| 3:46 | Updating Gorilla Essentials on staging; Site Hygiene email blocking |
+| 7:29 | Push live to staging (the other two sites are pushed at 12:04 and 12:39) |
+| 13:08 | The checklists in this repo; console check run on production as a baseline (15:13) |
+| 19:32 | Staging ready: confirming email is blocked (Site Hygiene at 20:50) |
+| 23:04 | Applying plugin updates on staging; reading changelogs |
+| 28:41 | License errors on staging; more updates appearing after WooCommerce |
+| 32:02 | WordPress core and child theme updates |
+| 33:30 | Regression checklist on staging; clearing caches (36:23) |
+| 41:41 | Console checks on cart and checkout |
+| 47:02 | Connecting a Stripe test account on staging |
+| 51:31 | SaferCheckout Lite country block; successful test order at 54:18 |
+| 55:06 | Confirming the order email did not go out |
+| 1:01:24 | Update window: the client is in California |
+| 1:03:27 | Production manual backup; deleting old backups |
+| 1:06:09 | Production updates |
+| 1:10:11 | Authorize.Net plugins on production |
+| 1:17:33 | Clearing caches, production checks, console check at checkout |
+| 1:22:25 | Close-out: checklist version tables, the monthly ticket |
+
+**Where the video and this SOP differ, this SOP wins.** The steps below include what was learned in that cycle, after the video was recorded:
+
+| In the video | Follow this instead |
+|--------------|---------------------|
+| Select all > Update plugins on ppemedical.com (23:04, 1:06:09) | One plugin at a time, WooCommerce ecosystem in order. No Select all on this site (Steps 3 and 7) |
+| Plugins first, WordPress core last (32:02) | WordPress core first, then plugins (Step 3) |
+| Staging email blocking set to "Automatic" (21:10) | **"Always block outside production, including a hostname guess"**, set once on production so every push carries it (see [Block Staging Email at the Source](#block-staging-email-at-the-source-one-time-setup)) |
+| Authorize.Net described as replaced by Stripe and to be left inactive (25:11, 1:10:11 to 1:15:49) | The Authorize.Net (Enterprise) gateway stays **enabled** for subscription renewals, hidden from checkout only. **Both** Authorize.Net plugins stay active. See Section 3 of the [ppemedical.com checklist](../../checklists/regression-test-ppemedical-com.md) |
+| Production updates started at about 6:30 PM Pacific (1:01:24) | Production inside the 8 PM to 5 AM Pacific window (see [Update Window](#update-window)) |
 
 ---
 
@@ -89,6 +129,24 @@ After adding the constants, verify by going to **Dashboard > Updates** in WordPr
 - [ ] ppemedical.com -- `wp-config.php` updated, plugin auto-updates disabled
 - [ ] ppetoolkit.com -- `wp-config.php` updated, plugin auto-updates disabled
 - [ ] ppemedevents.com -- `wp-config.php` updated, plugin auto-updates disabled
+
+---
+
+## Block Staging Email at the Source (One-Time Setup)
+
+A live-to-staging push copies production's database, Gorilla Essentials settings included. If production says "never block", every fresh staging copy can email real customers until someone changes it. That is what the October 2026 walkthrough found at 20:22. Set the block once **on production**, and every push brings it to staging.
+
+1. Make sure production runs a Gorilla Essentials version that has **Site Hygiene** (0.3.x or later, see Step 2)
+2. In the **production** admin, go to **Tools > Gorilla Essentials > Site Hygiene**
+3. Set **Block outbound email** to **"Always block outside production, including a hostname guess"** and save. This blocks every environment **except** production.
+4. **Verify production still sends.** The Site Hygiene screen must **not** show "Outbound email is being blocked right now". Over SSH, `wp eval '$g=new GorillaEssentials_Email_Guard(); echo json_encode($g->status());'` must show `"blocking":false`. Then send a test from **WP Mail SMTP > Tools > Email Test** to your own address and confirm it arrives. If production reports blocking, set the option back at once and escalate to the Technical Lead: production must send order and subscription emails.
+5. Step 2 still checks staging after every push. This setting makes the block the default; it does not replace the check.
+
+### Sites to Configure
+
+- [ ] ppemedical.com -- production set, production sending verified
+- [ ] ppetoolkit.com -- production set, production sending verified
+- [ ] ppemedevents.com -- production set, production sending verified
 
 ---
 
@@ -223,7 +281,7 @@ Update sites in this order to build confidence from simplest to most complex:
 | 2nd | ppemedical.com | 46 | High | WooCommerce + payment processing |
 | 3rd | ppetoolkit.com | 37 | **Critical** | LearnDash + custom QBank code, roles need `read` |
 
-**Repeat Steps 1-9 for each site, in the order above.**
+**Repeat Steps 1-9 for each site, in the order above.** Doing ppemedical.com first is acceptable when you want more of the update window for the longest site, as in the walkthrough video.
 
 > **Tip:** A live-to-staging push takes several minutes and locks the environment while it runs. Start the Step 2 push for all three sites at the beginning of the session so each staging copy is ready when you reach it.
 
@@ -239,12 +297,13 @@ The client is in California (Pacific time). Apply **production** updates (Step 7
 2. Navigate to the site you are updating
 3. Check that automatic daily backups are current (Backups tab)
 4. Log into the WordPress admin of the **production** site
-5. Navigate to **Plugins > Installed Plugins** and note which updates are available
+5. Navigate to **Plugins > Installed Plugins** and record which updates are available, with current and new versions, in the monthly ticket (`wp plugin list --update=available --format=table` over SSH). Do this **before** updating anything: once staging is updated, the list is gone, and you need it to apply the same updates on production
 6. Review changelogs for each pending update (click "View version X.X details")
 7. **For ppetoolkit.com ONLY:** Check if LearnDash has a major version update pending (e.g., 4.x to 5.x)
    - If a LearnDash **major version** update is pending: **STOP. Do not proceed.**
    - Notify the Technical Lead with the version details
    - The Technical Lead will coordinate with the Site Owner before any major LearnDash update
+8. Run the site's [browser console check](../../tests/console/) on **production** as a baseline, on the same pages you will test later. A `WARN` or console error that is already there before you update is not caused by the update.
 
 **Outcome:** You have a clear list of pending updates and have confirmed no blockers exist.
 
@@ -259,7 +318,7 @@ The client is in California (Pacific time). Apply **production** updates (Step 7
 5. Confirm the push and wait for it to complete (typically 2-5 minutes)
 6. Once complete, log into the **staging** WordPress admin
 7. **Verify:** Navigate to a few key pages to confirm staging matches production
-8. **Block outbound email on staging.** The push copies production's settings, so staging arrives able to email real customers. In the staging admin, go to **Tools > Gorilla Essentials > Site Hygiene** and set **Block outbound email** to **"Always block outside production, including a hostname guess"**, then save.
+8. **Confirm outbound email is blocked on staging.** The push copies production's settings. With the [one-time production setting](#block-staging-email-at-the-source-one-time-setup) in place, staging arrives already blocking; without it, staging arrives able to email real customers. In the staging admin, go to **Tools > Gorilla Essentials > Site Hygiene** and check that **Block outbound email** is **"Always block outside production, including a hostname guess"**. If it is not, set it and save, then set it on production too.
    - **Why "Always" rather than "Automatic".** Kinsta staging sets `WP_ENVIRONMENT_TYPE=staging` as a server environment variable for **web** requests, so "Automatic" does block there (the Site Hygiene screen shows "Outbound email is being blocked right now"). WP-CLI sessions do **not** get that variable: from the CLI the same staging site reports `production`, and "Automatic" does not block. Anything that sends mail through WP-CLI, including a host-run system cron, would get through. ppemedical.com staging has `DISABLE_WP_CRON` set, so its scheduled jobs (subscription emails) are run by the host, not by page visits. "Always" blocks in both contexts (verified 2026-10-28: ppemedical.com staging, CLI, `blocking: true`). On ppemedevents.com, WP-Cron runs over HTTP, so "Automatic" also works there, but "Always" is the safe default for every staging site.
    - **Verify:** the Gorilla Essentials environment badge shows staging, and the Site Hygiene screen shows **"Outbound email is being blocked right now"**. If WP Mail SMTP Pro reports that sending is blocked, that is expected.
    - Gorilla Essentials replaces the separate "disable emails" plugin that was previously used on staging. Do not install it again.
@@ -393,7 +452,7 @@ wp cache flush
    - ppetoolkit.com: [tests/console/ppetoolkit-console-checks.js](../../tests/console/ppetoolkit-console-checks.js) (course, lesson, topic, quiz)
    - ppemedevents.com: [tests/console/ppemedevents-console-checks.js](../../tests/console/ppemedevents-console-checks.js) (events list, single event)
    - See [Browser Console Regression Checks](../../guides/browser-console-regression-checks.md) for the page lists and how to read results. A `FAIL` here means stop and investigate before working the rest of the checklist.
-3. Execute every test item against the **staging** site
+3. Execute every test item against the **staging** site. If something looks wrong, check the same page on production before reporting it: some layout issues (for example a spacing issue on the homepage) predate the update
    - **ppemedical.com checkout on staging needs setup first.** After a push, Stripe is not connected on staging and checkout shows no card option. Go to **WooCommerce > Settings > Payments > Stripe > Configure connection** and **create or connect a test account** (a blank Stripe test account is fine), then pay with a Stripe test card (for example `4242 4242 4242 4242`, any future expiry, any CVC).
    - **SaferCheckout Lite blocks checkout from many countries**, including the Philippines. A blocked attempt shows as a **Failed** order with a risk score of 100. On **staging only**, untick your own country under **WooCommerce > Settings > SaferCheckout Lite** (location settings) and save. **Never change this on production.** The next live-to-staging push resets it.
    - The order confirmation email does not arrive on staging because email is blocked (Step 2). That is expected. Confirm the order shows in **WooCommerce > Orders** instead.
@@ -483,8 +542,9 @@ wp cache flush
    - Project: PPE Medical
    - Description: Monthly website updates - [month] [year]
    - Include time for all three sites
+4. Update the monthly update ticket with the results from item 1, then close it
 
-**Outcome:** Update cycle is documented and time is logged.
+**Outcome:** Update cycle is documented, time is logged and the ticket is closed.
 
 ---
 
@@ -552,7 +612,8 @@ Escalate to the Technical Lead **immediately** if any of the following occur:
 
 Before marking an update cycle as complete, verify:
 
-- [ ] All three sites updated in the correct order (events -> medical -> toolkit)
+- [ ] All three sites updated (events -> medical -> toolkit, or ppemedical.com first)
+- [ ] Outbound email confirmed blocked on each staging site after the push
 - [ ] Staging tested before production for each site
 - [ ] Manual backups created for each production site before updates
 - [ ] Regression tests passed on both staging and production for each site
@@ -562,6 +623,7 @@ Before marking an update cycle as complete, verify:
 - [ ] Plugin version tables updated in checklists
 - [ ] Any pinned plugins are still pinned (Tools > Gorilla Essentials > Plugin Locks), and each pin's note still gives its reason
 - [ ] Time logged in Clockify
+- [ ] Monthly update ticket updated and closed
 - [ ] Any issues documented and escalated as needed
 
 ---
