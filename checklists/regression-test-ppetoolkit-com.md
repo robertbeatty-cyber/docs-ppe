@@ -141,6 +141,8 @@
 - [ ] Dynamic content and widgets display correctly
 - [ ] LearnDash-specific Elementor widgets (course/lesson/topic content) render correctly **for a non-admin student**
 - [ ] Elementor CSS files are generating: no 404 on `post-<ID>.css` / `custom-frontend.min.css` in the Network tab (see Section 0)
+- [ ] **Gallery and image 404s (added 2026-10-29, #788088):** open `/topic/course-companion/` and check the Console for 404s under `/wp-content/uploads/elementor/thumbs/`. Any 404 there means a widget uses a **custom** image size, whose thumbnail was saved as `.avif` by Modern Image Formats. Fix: set the widget to a registered size (`large`). Do not regenerate thumbnails.
+- [ ] **Page shows as one unformatted block (added 2026-10-29, #788088):** the page's Elementor data is probably unreadable, not broken by the update. Check before restoring anything: `wp eval 'var_dump(is_array(json_decode(get_post_meta(<ID>, "_elementor_data", true), true)));'`. `false` means Elementor cannot read it; see the incident note in ansible-v2 for the repair.
 
 ---
 
